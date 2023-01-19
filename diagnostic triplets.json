@@ -1,0 +1,100 @@
+{
+  "name": "diagnostic triplets",
+  "settings": {},
+  "experiment": [
+    {
+      "type": "task",
+      "task": "baseline",
+      "cursor": "normal",
+      "targets": [
+        90
+      ],
+      "rotation": 0,
+      "trials": 5
+    },
+    {
+      "type": "supertask",
+      "name": "triplets",
+      "taskorder": "fixed",
+      "repeats": 3,
+      "properties": {
+        "rotation": {
+          "order": "pseudorandom",
+          "values": [
+            [
+              0
+            ],
+            [
+              5,
+              10,
+              15
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ]
+        },
+        "trials": {
+          "order": "pseudorandom",
+          "values": [
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              1
+            ],
+            [
+              2,
+              3,
+              4
+            ]
+          ]
+        }
+      },
+      "subtasks": [
+        {
+          "name": "pre-clamped",
+          "cursor": "clamped",
+          "targets": [
+            90
+          ],
+          "rotation": 0,
+          "trials": 1
+        },
+        {
+          "name": "perturbed",
+          "cursor": "normal",
+          "targets": [
+            90
+          ],
+          "rotation": 0,
+          "trials": 1
+        },
+        {
+          "name": "post-clamped",
+          "cursor": "clamped",
+          "targets": [
+            90
+          ],
+          "rotation": 0,
+          "trials": 1
+        },
+        {
+          "name": "washout",
+          "cursor": "normal",
+          "targets": [
+            90
+          ],
+          "rotation": 0,
+          "trials": 1
+        }
+      ]
+    }
+  ]
+}
