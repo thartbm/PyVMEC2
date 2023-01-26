@@ -1,6 +1,8 @@
 {
   "name": "diagnostic triplets",
-  "settings": {},
+  "settings": {
+    "preferred_unit": "cm"
+  },
   "experiment": [
     {
       "type": "task",
@@ -10,13 +12,13 @@
         90
       ],
       "rotation": 0,
-      "trials": 5
+      "trials": 15
     },
     {
       "type": "supertask",
       "name": "triplets",
       "taskorder": "fixed",
-      "repeats": 3,
+      "repeats": 9,
       "properties": {
         "rotation": {
           "order": "pseudorandom",
