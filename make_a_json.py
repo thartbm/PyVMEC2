@@ -5,7 +5,25 @@ cfg['name'] = 'diagnostic triplets'
 cfg['settings'] = {}     # window scaling / mirroring & flipping / other settings...
                          # workspace settings: home position... max target distance... allowed target angels & allowed rotations
 
+cfg['setting']['basictrial'] = {
+      "target"         : 0,
+      "rotation"       : 0,
+      "errorgain"      : 1,
+      "cursor"         : "normal",
+      "name"           : "default",
+      "home"           : [0,0],
+      "targetdistance" : 8
+    }
+
 cfg['settings']['preferred_unit'] = 'cm'
+
+cfg['settings']['display'] = {
+      "type"       : "monitor",
+      "screen_idx" : 1,
+      "size_px"    : [1680, 1050],
+      "size_cm"    : [43.3, 27.1],
+      "viewscale"  : [1,1]
+    }
 
 cfg['experiment'] = []
 
