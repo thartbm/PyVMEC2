@@ -59,7 +59,7 @@ import screeninfo
 
 class monitorDisplay:
 
-    def __init__(self, resolution, screen=0, size=None, gammafile=None):
+    def __init__(self, cfg):
         # resolution is in pixels
         # size is in centimeters
 
@@ -68,7 +68,7 @@ class monitorDisplay:
 
         s = screeninfo.get_monitors()[screen]
 
-        
+
 
 
         # store resolution (in pixels, needs to be checked with created window object later on)

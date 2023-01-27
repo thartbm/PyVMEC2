@@ -27,18 +27,23 @@ cfg['settings']['devices']['display'] = {
       "screen_idx" : 1,
       "size_px"    : [1680, 1050],
       "size_cm"    : [43.3, 27.1],
-      "viewscale"  : [1,1]
+      "viewscale"  : [1,1],
+      "gammafile"  : "DellE2009Wt.csv"
 
       # not sure if we want to allow viewscaling again
       # this was done to map screen and tablet to the same cm distance
       # but we can now do this better, based on their physical sizes
+
+      # gammafile is completely optional, and more useful for well-calibrated
+      # visual stimuli (e.g. linearizing the CLUT etc)
     }
 
 cfg['settings']['devices']['tracker'] = {
       "type"       : "tablet",
       "screen_idx" : 1,
       "size_px"    : [1680, 1050],
-      "size_cm"    : [31.1, 21.6]   # Wacom Intuos Pro Large, specifications from website
+      "size_cm"    : [31.1, 21.6],   # Wacom Intuos Pro Large, specifications from website
+      "offset_cm"  : [0, 0]
 
       # typically a tablet is mapped to screen pixels
       # using a mouse device
@@ -47,6 +52,8 @@ cfg['settings']['devices']['tracker'] = {
       # while we can verify the screen's size in pixels
       # we'll just have to assume that the size in cm is correct
       # if not given, we fall back to normalized coordinates
+
+      # when using a stencil, we might want to allow for small offsets?
 }
 
 # a mouse tracker device would behave almost the same way
