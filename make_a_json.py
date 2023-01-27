@@ -27,12 +27,15 @@ cfg['settings']['devices']['display'] = {
       "screen_idx" : 1,
       "size_px"    : [1680, 1050],
       "size_cm"    : [43.3, 27.1],
-      "viewscale"  : [1,1],
+      "viewscale"  : [-1,-1],
       "gammafile"  : "DellE2009Wt.csv"
 
-      # not sure if we want to allow viewscaling again
+      # not sure if we want to allow fine-grained viewscaling again
       # this was done to map screen and tablet to the same cm distance
       # but we can now do this better, based on their physical sizes
+
+      # however, it also allows flipping and mirroring, which is
+      # necessary on the mirror-box setup
 
       # gammafile is completely optional, and more useful for well-calibrated
       # visual stimuli (e.g. linearizing the CLUT etc)

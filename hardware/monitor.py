@@ -60,24 +60,21 @@ import screeninfo
 class monitorDisplay:
 
     def __init__(self, cfg):
+
+        self.screen_idx = copy.deepcopy(cfg['settings']['devices']['display']['screen_idx'])
+        self.size_px    = copy.deepcopy(cfg['settings']['devices']['display']['size_px'])
+        self.size_cm    = copy.deepcopy(cfg['settings']['devices']['display']['size_cm'])
+        self.viewscale  = copy.deepcopy(cfg['settings']['devices']['display']['viewscale'])
+        self.gammafile  = copy.deepcopy(cfg['settings']['devices']['display']['gammafile'])
+
+
         # resolution is in pixels
         # size is in centimeters
 
         # with the pyglet backend you can specify a monitor backend directly,
         # but if we use screeninfo, that's not necessary
 
-        s = screeninfo.get_monitors()[screen]
-
-
-
-
-        # store resolution (in pixels, needs to be checked with created window object later on)
-        self.resolution = resolution
-
-        # store size (in cm)
-        self.size = size
-
-        # instead of a gammefile, we could input the gammagrid itself?
+        s = screeninfo.get_monitors()[self.screen_idx]
 
         # load gammagrid from stored file
         if (gammafile == None):
@@ -86,16 +83,16 @@ class monitorDisplay:
                                 [0., 1., 1., np.nan, np.nan, np.nan],
                                 [0., 1., 1., np.nan, np.nan, np.nan],
                                 [0., 1., 1., np.nan, np.nan, np.nan]], dtype=float)
-        if (isinstance(gammafile, str)):
+        if (isinstance(self.gammafile, str)):
             # probably a filename
-            self.gg = np.loadtxt(fname=gammafile,
+            self.gg = np.loadtxt(fname=self.gammafile,
                                  delimiter=',')
         if (! isinstance(self.gg, np.array)):
             print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')
         # tempmonitor =
 
         # make window object using the tempmonitor and viewScale
-        if (size == None):
+        if (self.size_cm == None):
             # the only options available would be pixels or normalized
             # we pick normalized, so we tell the psychopy windows object
             self.units = 'norm'
