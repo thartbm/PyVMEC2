@@ -1,4 +1,5 @@
-import json, math, copy
+import json
+#import math, copy
 
 cfg = {}
 cfg['name'] = 'diagnostic triplets'
@@ -18,8 +19,10 @@ cfg['settings']['basictrial'] = {
 # units could be 'cm' or 'norm' (pixels or degrees are near useless)
 cfg['settings']['preferred_unit'] = 'cm'
 
+cfg['settings']['devices'] = {}
+
 # the size in pixels and cm could be read from screeninfo:
-cfg['settings']['display'] = {
+cfg['settings']['devices']['display'] = {
       "type"       : "monitor",
       "screen_idx" : 1,
       "size_px"    : [1680, 1050],
@@ -31,11 +34,11 @@ cfg['settings']['display'] = {
       # but we can now do this better, based on their physical sizes
     }
 
-cfg['settings']['tracker'] = {
-      "type" : "tablet",
-      "screen_idx": 1,
-      "size_px" : [1680, 1050],
-      "size_cm":  []
+cfg['settings']['devices']['tracker'] = {
+      "type"       : "tablet",
+      "screen_idx" : 1,
+      "size_px"    : [1680, 1050],
+      "size_cm"    : [31.1, 21.6]   # Wacom Intuos Pro Large, specifications from website
 
       # typically a tablet is mapped to screen pixels
       # using a mouse device
@@ -45,6 +48,13 @@ cfg['settings']['tracker'] = {
       # we'll just have to assume that the size in cm is correct
       # if not given, we fall back to normalized coordinates
 }
+
+# a mouse tracker device would behave almost the same way
+# except that we don't know the physical size of the movements
+# this would be the only setting (I can think of) where we
+# have to record reaches in normalized units
+
+
 
 # randomization: 'standard' or 'individual'
 # standard: everyone gets the same random sequence (based on experiment name)
