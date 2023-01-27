@@ -5,6 +5,8 @@ def getTrialSequence(jsonfile, participant):
     with open(jsonfile) as fp:
         cfg = json.load(fp)
 
+    seedRNG(cfg=cfg,participant=participant)  # maybe participant should already be in the cfg at this point
+
     cfg['triallist'] = []
 
     # simple start:
@@ -153,6 +155,19 @@ def addSuperTaskTrials(cfg, el):
 
     return(cfg)
 
+
+def seedRNG(cfg, participant):
+
+    if cfg['settings']['randomization'] == 'individual':
+        seed_string = copy.deepcopy(participant)
+    if cfg['settings']['randomization'] == 'standard':
+        seed_string = copy.deepcopy(cfg['name'])
+
+    #sum([ord(l) for l in list(seed_string)])
+    random.seed(seed_string)
+
+    return
+    
 
 
 cfg = getTrialSequence( jsonfile = 'diagnostic triplets.json',

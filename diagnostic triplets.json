@@ -1,7 +1,36 @@
 {
   "name": "diagnostic triplets",
   "settings": {
-    "preferred_unit": "cm"
+    "basictrial": {
+      "target": 0,
+      "rotation": 0,
+      "errorgain": 1,
+      "cursor": "normal",
+      "name": "default",
+      "home": [
+        0,
+        0
+      ],
+      "targetdistance": 8
+    },
+    "preferred_unit": "cm",
+    "display": {
+      "type": "monitor",
+      "screen_idx": 1,
+      "size_px": [
+        1680,
+        1050
+      ],
+      "size_cm": [
+        43.3,
+        27.1
+      ],
+      "viewscale": [
+        1,
+        1
+      ]
+    },
+    "randomization": ""
   },
   "experiment": [
     {
@@ -62,39 +91,19 @@
       "subtasks": [
         {
           "name": "pre-clamped",
-          "cursor": "clamped",
-          "targets": [
-            90
-          ],
-          "rotation": 0,
-          "trials": 1
+          "cursor": "clamped"
         },
         {
           "name": "perturbed",
-          "cursor": "normal",
-          "targets": [
-            90
-          ],
-          "rotation": 0,
-          "trials": 1
+          "cursor": "normal"
         },
         {
           "name": "post-clamped",
-          "cursor": "clamped",
-          "targets": [
-            90
-          ],
-          "rotation": 0,
-          "trials": 1
+          "cursor": "clamped"
         },
         {
           "name": "washout",
-          "cursor": "normal",
-          "targets": [
-            90
-          ],
-          "rotation": 0,
-          "trials": 1
+          "cursor": "normal"
         }
       ]
     }
