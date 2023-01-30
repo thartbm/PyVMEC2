@@ -67,14 +67,16 @@ class monitorDisplay:
         self.viewscale  = copy.deepcopy(cfg['settings']['devices']['display']['viewscale'])
         self.gammafile  = copy.deepcopy(cfg['settings']['devices']['display']['gammafile'])
 
-
         # resolution is in pixels
         # size is in centimeters
 
         # with the pyglet backend you can specify a monitor backend directly,
         # but if we use screeninfo, that's not necessary
-
-        s = screeninfo.get_monitors()[self.screen_idx]
+        if (isinstance(self.screen_idx), int)):
+            s = screeninfo.get_monitors()[self.screen_idx]
+        else:
+            # pick the first monitor?
+            s = screeninfo.get_monitors()[0]
 
         # load gammagrid from stored file
         if (gammafile == None):
@@ -91,12 +93,49 @@ class monitorDisplay:
             print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')
         # tempmonitor =
 
+        if (self.size_px == None):
+            try:
+                self.size_px = [s.width, s.height]
+                fullscreen = True
+            except e:
+                print(e)
+                self.size_px = [400,300]
+                fullscreen = False
+        else:
+            fullscreen = True
+            if ((s.width != self.size_px[0]) or (s.height != self.size_px[1])):
+                print('user-defined monitor pixel size does not match screeninfo')
+                print('trying to set the user-defined monitor pixel size')
+
+
         # make window object using the tempmonitor and viewScale
         if (self.size_cm == None):
             # the only options available would be pixels or normalized
             # we pick normalized, so we tell the psychopy windows object
             self.units = 'norm'
-            pass
+            # but this _can_ be overruled:
+            if (cfg['settings']['preferred_unit'] == 'cm' and isinstance(s.width_mm, int) and isinstance(s.height_mm, int)):
+                self.units = 'cm'
+                self.size_cm = [s.width_mm/10., s.height_mm/10.]
+                print('using the screeninfo monitor size in centimeters')
         else:
             # now we can have cm available as well
             self.units = 'cm'
+            if (((s.width_mm/10.) != self.size_cm[0]) or ((s.height_mm/10.) != slef.size_cm[1])):
+                print('user-defined monitor centimeter size does not match screeninfo')
+                print('keeping the user-defined monitor centimeter size')
+
+
+# we will only need a dummyDisplay object if we have non-psychopy trackers
+
+# class dummyDisplay:
+#
+#     def __init__(self, cfg):
+#
+#         # using the main monitor:
+#         s = screeninfo.get_monitors()
+#
+#         print('this is the UNFINISHED dummy display initialization')
+#         print('please define a monitor display')
+#         print('this is what screeninfo knows about the monitor(s):')
+#         print(s)

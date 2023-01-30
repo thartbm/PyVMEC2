@@ -1,5 +1,9 @@
 import copy
 
+# if we want to separate tracking trajectories from visual stimuli,
+# we want to use iohub
+# which means we need to use the pyglet backend
+
 class tabletTracker:
 
     def __init__(self, cfg):
