@@ -1,11 +1,8 @@
 import random, json, copy, math
 
-def getTrialSequence(jsonfile, participant):
+def getTrialSequence(cfg):
 
-    with open(jsonfile) as fp:
-        cfg = json.load(fp)
-
-    seedRNG(cfg=cfg,participant=participant)  # maybe participant should already be in the cfg at this point
+    seedRNG(cfg)
 
     cfg['triallist'] = []
 
@@ -156,10 +153,10 @@ def addSuperTaskTrials(cfg, el):
     return(cfg)
 
 
-def seedRNG(cfg, participant):
+def seedRNG(cfg):
 
     if cfg['settings']['randomization'] == 'individual':
-        seed_string = copy.deepcopy(participant)
+        seed_string = copy.deepcopy(cfg['participant'])
     if cfg['settings']['randomization'] == 'standard':
         seed_string = copy.deepcopy(cfg['name'])
 
@@ -167,8 +164,8 @@ def seedRNG(cfg, participant):
     random.seed(seed_string)
 
     return
-    
 
 
-cfg = getTrialSequence( jsonfile = 'diagnostic triplets.json',
-                        participant = 'marius' ) # participant ID seeds RNG
+
+# cfg = getTrialSequence( {'jsonfile' : 'diagnostic triplets.json',
+                         # 'participant' : 'marius' } ) # participant ID seeds RNG

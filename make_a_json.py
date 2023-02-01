@@ -1,22 +1,37 @@
 import json
 #import math, copy
 
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# THIS IS NOT HOW THE FINAL SCRIPTS WILL WORK!
+#
+# # # # # # # # # # # # # # # # # # # # # # # # #
+
+# the idea is to make a GUI that creates and manages these JSON files
+# and will also run them, store data and do some basic pre-processing
+
+
 cfg = {}
 cfg['name'] = 'diagnostic triplets'
 cfg['settings'] = {}     # window scaling / mirroring & flipping / other settings...
                          # workspace settings: home position... max target distance... allowed target angels & allowed rotations
 
 cfg['settings']['basictrial'] = {
-      "target"         : 0,
-      "rotation"       : 0,
-      "errorgain"      : 1,
-      "cursor"         : "normal",
-      "name"           : "default",
-      "home"           : [0,0],
-      "targetdistance" : 8
+      "target"              : 0,
+      "rotation"            : 0,
+      "errorgain"           : 1,
+      "cursor"              : "normal",
+      "name"                : "default",
+      "home"                : [0,0],
+      "targetdistance_cm"   : 8,
+      "targetdistance_norm" : 0.4,
+      "returncursor"        : False,
     }
 
 # units could be 'cm' or 'norm' (pixels or degrees are near useless)
+# maybe also NSU, which is (norm / normalized target distance)
 cfg['settings']['preferred_unit'] = 'cm'
 
 cfg['settings']['devices'] = {}
@@ -64,6 +79,41 @@ cfg['settings']['devices']['tracker'] = {
 # this would be the only setting (I can think of) where we
 # have to record reaches in normalized units
 
+
+
+# one day, all STIMULI will also be modifiable as trial properties
+# (- different colored target to indicate instructions,
+#  - HUGE target to reduce errors,
+#  - gaussian blur cursors/targets to reduce certainty)
+# and they can all be replaced with images or random shapes
+cfg['settings']['stimuli'] = {}
+
+cfg['settings']['stimuli']['home'] = {
+    # shapestim / circle ?
+    "edges"     : 32,
+    "lineColor" : [0,0,0],  # gray
+    "lineWidth" : 2,        # I think this is ALWAYS in pixels...
+    "fillColor" : None,     # transparent
+    "radius_cm" : 0.5
+}
+
+cfg['settings']['stimuli']['target'] = {
+    # shapestim / circle ?
+    "edges"     : 32,
+    "lineColor" : [0,0,0],  # gray
+    "lineWidth" : 2,        # I think this is ALWAYS in pixels...
+    "fillColor" : None,     # thansparent
+    "radius_cm" : 0.5
+}
+
+cfg['settings']['stimuli']['cursor'] = {
+    # shapestim / circle ?
+    "edges"     : 32,
+    "lineColor" : None,     # transparent
+    "lineWidth" : 0,        # I think this is ALWAYS in pixels...
+    "fillColor" : [1,1,1],  # white
+    "radius_cm" : 0.5
+}
 
 
 # randomization: 'standard' or 'individual'

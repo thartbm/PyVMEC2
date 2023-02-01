@@ -41,14 +41,18 @@ def setupHardware():
 
     # first, a PsychoPy window object has to be made
     if cfg['settings']['devices']['display']['type'] == "monitor":
-        cfg['display'] = monitorDisplay(cfg)
+        cfg['hw']['display'] = monitorDisplay(cfg)
     else:
         # this is not made yet, and is meant for non-psychopy displays
-        cfg['display'] = dummyDisplay(cfg)
+        cfg['hw']['display'] = dummyDisplay(cfg)
         # so if the display object is not a monitor, there will be errors
         # and it should be a monitor anyway
 
-    
+        # once we have non-psychopy displays (VR?) any psychopy tracker
+        # should still be related to a window object (a psychopy display)
+        # that's where a dummyDisplay comes in, but we don't need it now
+
+
 
 
     # winType='pyglet'
