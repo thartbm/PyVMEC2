@@ -168,4 +168,4 @@ def seedRNG(cfg):
 
 
 # cfg = getTrialSequence( {'jsonfile' : 'diagnostic triplets.json',
-                         # 'participant' : 'marius' } ) # participant ID seeds RNG
+#                          'participant' : 'marius' } ) # participant ID seeds RNG

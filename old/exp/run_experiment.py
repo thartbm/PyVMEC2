@@ -1,7 +1,6 @@
+import sys, json
 
-
-
-def runExperiment(jsonfile, partcipant):
+def runExperiment(jsonfile, participant):
 
     cfg = {}
 
