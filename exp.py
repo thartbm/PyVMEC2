@@ -67,53 +67,51 @@ def getTrialSequence(cfg):
 
 def addTaskTrials(cfg, el):
 
-    tasktrial = copy.deepcopy(cfg['basictrial'])
-    for k in tasktrial.keys():
-        if k in el:
-            tasktrial[k] = el[k]
+    task = copy.deepcopy(cfg['settings']['basictrial'])
+    task.update(el)
 
+    var_prop_names = []
+    if 'order' in task.keys():
+        for p in task.keys():
+            if isinstance(task[p], list) & (p in task['order'].keys()):
+                var_prop_names.append(p)
 
-    targets = copy.deepcopy(el['targets'])
+    variable_properties = {}
+    for vpn in var_prop_names:
+        variable_properties[vpn] = []
+        nblocks = int(math.ceil(task['trials'] / len(task[vpn])))
+        for block in range(nblocks):
+            values = copy.deepcopy(task[vpn])
+            if task['order'][vpn] == 'pseudorandom':
+                random.shuffle(values)
+            variable_properties[vpn] += values
+        variable_properties[vpn] = variable_properties[vpn][:task['trials']]
+        if task['order'][vpn] == 'random':
+            random.shuffle(variable_properties[vpn])
 
-    # set up a sequence of rotations:
-    trial_rotations = [el['rotation']] * el['trials']
-
-    # deal with task
-    blocks = int(math.ceil(el['trials'] / len(el['targets'])))
-
-    current_trial = 0
+    # make the basic trial template:
+    trial = copy.deepcopy(cfg['settings']['basictrial'])
+    strippedtask = copy.deepcopy(task)
+    remove_entries = var_prop_names + ['order']
+    for k in remove_entries:
+        strippedtask.pop(k, None)
+    trial.update(strippedtask)
 
     # psedurandomize in blocks:
-    for block in range(blocks):
+    for trialno in range(task['trials']):
 
-        target_order = list(range(len(targets)))
-        random.shuffle(target_order)
+        # else: get a trial to add to the list:
+        thistrial = copy.deepcopy(trial)
+        for vpn in var_prop_names:
+            thistrial[vpn] = variable_properties[vpn][trialno]
 
-        # other stuff, apart from targets?
-
-        for target_no in range(len(targets)):
-
-            if (current_trial == el['trials']):
-                pass # for tasks with fractioned blocks
-
-            # else: get a trial to add to the list:
-            thistrial = copy.deepcopy(tasktrial)
-
-
-
-            thistrial['target'] = targets[target_order[target_no]]
-
-            # rotation? other stuff?
-            thistrial['rotation'] = trial_rotations[current_trial]
-
-
-            cfg['triallist'] += [thistrial]
-
-            current_trial += 1
+        cfg['triallist'] += [thistrial]
 
     return(cfg)
 
 def addSuperTaskTrials(cfg, el):
+
+    print('adding super task...')
 
     nsubtasks = len(el['subtasks'])
     nproperties = len(el['properties'])
@@ -151,7 +149,7 @@ def addSuperTaskTrials(cfg, el):
 
             # populate it with the variable properties:
             for property in el['properties'].keys():
-
+                #print(property)
                 if len(prop_vals[task_name][property]) == 0:
                     temp_vals = copy.deepcopy(el['properties'][property]['values'][task_idx])
                     if el['properties'][property]['order'] == 'pseudorandom':

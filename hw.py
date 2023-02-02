@@ -289,9 +289,9 @@ class tabletTracker:
 
     def __init__(self, cfg):
 
-        self.size_cm = copy.deepcopy(['settings']['devices']['tracker']['size_cm'])
-        self.size_px = copy.deepcopy(['settings']['devices']['tracker']['size_px'])
-        self.offset_cm = copy.deepcopy(['settings']['devices']['tracker']['offset_cm'])
+        self.size_cm = copy.deepcopy(cfg['settings']['devices']['tracker']['size_cm'])
+        self.size_px = copy.deepcopy(cfg['settings']['devices']['tracker']['size_px'])
+        self.offset_cm = copy.deepcopy(cfg['settings']['devices']['tracker']['offset_cm'])
 
 
 

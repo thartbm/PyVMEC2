@@ -19,7 +19,7 @@ cfg['settings'] = {}     # window scaling / mirroring & flipping / other setting
                          # workspace settings: home position... max target distance... allowed target angels & allowed rotations
 
 cfg['settings']['basictrial'] = {
-      "target"              : 0,
+      "target"              : 90,
       "rotation"            : 0,
       "errorgain"           : 1,
       "cursor"              : "normal",
@@ -27,11 +27,11 @@ cfg['settings']['basictrial'] = {
       "home"                : [0,0],
       "targetdistance_cm"   : 8,
       "targetdistance_norm" : 0.4,
-      "returncursor"        : False,
+      "returncursor"        : False
     }
 
-# units could be 'cm' or 'norm' (pixels or degrees are near useless)
-# maybe also NSU, which is (norm / normalized target distance)
+# units could be 'cm' or 'norm' [pixels or degrees are near useless]
+# maybe also NSU, which is [norm / normalized target distance]
 cfg['settings']['preferred_unit'] = 'cm'
 
 cfg['settings']['devices'] = {}
@@ -53,7 +53,7 @@ cfg['settings']['devices']['display'] = {
       # necessary on the mirror-box setup
 
       # gammafile is completely optional, and more useful for well-calibrated
-      # visual stimuli (e.g. linearizing the CLUT etc)
+      # visual stimuli [e.g. linearizing the CLUT etc]
     }
 
 cfg['settings']['devices']['tracker'] = {
@@ -76,15 +76,15 @@ cfg['settings']['devices']['tracker'] = {
 
 # a mouse tracker device would behave almost the same way
 # except that we don't know the physical size of the movements
-# this would be the only setting (I can think of) where we
+# this would be the only setting [I can think of] where we
 # have to record reaches in normalized units
 
 
 
 # one day, all STIMULI will also be modifiable as trial properties
-# (- different colored target to indicate instructions,
+# [- different colored target to indicate instructions,
 #  - HUGE target to reduce errors,
-#  - gaussian blur cursors/targets to reduce certainty)
+#  - gaussian blur cursors/targets to reduce certainty]
 # and they can all be replaced with images or random shapes
 cfg['settings']['stimuli'] = {}
 
@@ -117,52 +117,56 @@ cfg['settings']['stimuli']['cursor'] = {
 
 
 # randomization: 'standard' or 'individual'
-# standard: everyone gets the same random sequence (based on experiment name)
-# individual: participants get their own random sequence (based on participant ID)
+# standard: everyone gets the same random sequence [based on experiment name]
+# individual: participants get their own random sequence [based on participant ID]
 cfg['settings']['randomization'] = 'individual'
 
 cfg['experiment'] = []
 
 cfg['experiment'].append( { 'type':'task',
-                            'name':'baseline',
-                            'cursor':'normal',
-                            'targets':[90],
-                            'rotation':0,
-                            'trials':15 } )
+                             'name':'baseline',
+                             'cursor':'normal',
+                             'target': 90 ,
+                             'rotation': 0 ,
+                             'trials': 15 ,
+                             'order' : {'target' : 'random',
+                                        'rotation' : 'pseudorandom'} } )
 
 cfg['experiment'].append( { 'type':'supertask',
-                            'name':'triplets',
-                            'taskorder':'fixed', # these task are always done in the same order
-                            'repeats':9,
-                            'properties':{ 'rotation': {'order':'pseudorandom', # the values are randomized across repeat of all subtasks
-                                                        'values': [[0],[5,10,15],[0],[0]] }, # four values: one for each of the subtasks
-                                           'trials' : {'order':'pseudorandom',
-                                                       'values': [[1],[1],[1],[2,3,4]] } },
-                            'subtasks': [{ 'name':'pre-clamped',
-                                           'cursor':'clamped' },
+                             'name':'triplets',
+                             'taskorder':'fixed', # these task are always done in the same order
+                             'repeats':9,
+                             'properties':{ 'rotation': {'order':'pseudorandom', # the values are randomized across repeat of all subtasks
+                                                         'values': [[0],[5,10,15],[0],[0]] }, # four values: one for each of the subtasks
+                                            'trials' : {'order':'pseudorandom',
+                                                        'values': [[1],[1],[1],[2,3,4]] } },
+                             'subtasks': [{ 'name':'pre-clamped',
+                                            'cursor':'clamped' },
                                            # ,
-                                           # 'targets':[90],
-                                           # 'rotation':0,
+                                           # 'target':[90],
+                                           # 'rotation':[0],
                                            # 'trials':1 },
-                                         { 'name':'perturbed',
-                                           'cursor':'normal'},
+                                          { 'name':'perturbed',
+                                            'cursor':'normal'},
                                            # ,
-                                           # 'targets':[90],
-                                           # 'rotation':0,
+                                           # 'target':[90],
+                                           # 'rotation':[0],
                                            # 'trials':1 },
-                                         { 'name':'post-clamped',
-                                           'cursor':'clamped'},
+                                          { 'name':'post-clamped',
+                                            'cursor':'clamped'},
                                            # ,
-                                           # 'targets':[90],
-                                           # 'rotation':0,
+                                           # 'target':[90],
+                                           # 'rotation':[0],
                                            # 'trials':1 },
-                                         { 'name':'washout',
-                                           'cursor':'normal'},
+                                          { 'name':'washout',
+                                            'cursor':'normal'},
                                            # ,
-                                           # 'targets':[90],
-                                           # 'rotation':0,
+                                           # 'target':[90],
+                                           # 'rotation':[0],
                                            # 'trials':1 },
-                                         ] } )
+                                          ] } )
+
+
 
 with open( file='%s.json'%(cfg['name']),
                 mode='w') as fp:
