@@ -39,7 +39,7 @@ cfg['settings']['devices'] = {}
 # the size in pixels and cm could be read from screeninfo:
 cfg['settings']['devices']['display'] = {
       "type"       : "monitor",
-      "screen_idx" : 1,
+      "screen_idx" : 0,
       "size_px"    : [1680, 1050],
       "size_cm"    : [43.3, 27.1],
       "viewscale"  : [-1,-1],

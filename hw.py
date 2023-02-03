@@ -1,7 +1,7 @@
+from exp import *
 from psychopy import core, visual, monitors
 import numpy as np
-import screeninfo
-import copy
+import screeninfo, copy, os
 
 
 # let's try using the psychopy IOHUB server system
@@ -38,7 +38,7 @@ from psychopy import core, visual
 # this will be a function to run,
 # it will create objects that are reffed in the cfg dictionary
 
-def setupHardware():
+def setupHardware(cfg):
 
     # new section in the cfg for hardware:
     cfg['hw'] = {}
@@ -106,7 +106,7 @@ class monitorDisplay:
         self.pos = [s.x, s.y]
 
         # load gammagrid from stored file
-        if (gammafile == None):
+        if (self.gammafile == None):
             # default gammagrid that leaves the color space as is:
             self.gg = np.array([[0., 1., 1., np.nan, np.nan, np.nan],
                                 [0., 1., 1., np.nan, np.nan, np.nan],
@@ -114,11 +114,13 @@ class monitorDisplay:
                                 [0., 1., 1., np.nan, np.nan, np.nan]], dtype=float)
         if (isinstance(self.gammafile, str)):
             # probably a filename
-            self.gg = np.loadtxt(fname=print('ggs/%s'%self.gammafile),
+            self.gg = np.loadtxt(fname='ggs/%s'%self.gammafile,
                                  delimiter=',')
-        if not(isinstance(self.gg, np.array)):
-            print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')
+        # if not(isinstance(self.gg, numpy.ndarray)):
+        #     print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')
         # tempmonitor =
+
+        print(self.gg)
 
         if (self.size_px == None):
             try:
@@ -169,22 +171,24 @@ class monitorDisplay:
         self.monitor = mymonitor
 
         # now set the window object using this monitor:
-        self.win = visual.Window( size = self.sixe_px,
+        self.win = visual.Window( size = self.size_px,
                                   pos = self.pos,
                                   winType = 'pyglet',
                                   color = [-1,-1,-1],
                                   monitor = self.monitor,
                                   units = self.units)
 
+        stimuli = copy.deepcopy(cfg['settings']['stimuli'])
+
         # this is set here once, but as properties that could be changed later on:
         if self.units == 'cm':
-            self.home_radius   = cfg['stimuli']['home']['radius_cm']
-            self.target_radius = cfg['stimuli']['target']['radius_cm']
-            self.cursor_radius = cfg['stimuli']['cursor']['radius_cm']
+            self.home_radius   = stimuli['home']['radius_cm']
+            self.target_radius = stimuli['target']['radius_cm']
+            self.cursor_radius = stimuli['cursor']['radius_cm']
         else:
-            self.home_radius   = (cfg['stimuli']['home']['radius_cm']   / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
-            self.target_radius = (cfg['stimuli']['target']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
-            self.cursor_radius = (cfg['stimuli']['cursor']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
+            self.home_radius   = (stimuli['home']['radius_cm']   / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
+            self.target_radius = (stimuli['target']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
+            self.cursor_radius = (stimuli['cursor']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
 
 
 
@@ -195,25 +199,27 @@ class monitorDisplay:
         # a target position (open circle)
         # a cursor (a filled disc)
 
+        stimuli = copy.deepcopy(cfg['settings']['stimuli'])
+
         self.home = visual.Circle( win = self.win,
-                                   edges = cfg['stimuli']['home']['edges'],
-                                   lineWidth = cfg['stimuli']['home']['lineWidth'],
-                                   lineColor = cfg['stimuli']['home']['lineColor'],
-                                   fillColor = cfg['stimuli']['home']['fillColor'],
+                                   edges = stimuli['home']['edges'],
+                                   lineWidth = stimuli['home']['lineWidth'],
+                                   lineColor = stimuli['home']['lineColor'],
+                                   fillColor = stimuli['home']['fillColor'],
                                    radius = self.home_radius)
 
         self.target = visual.Circle( win = self.win,
-                                     edges = cfg['stimuli']['target']['edges'],
-                                     lineWidth = cfg['stimuli']['target']['lineWidth'],
-                                     lineColor = cfg['stimuli']['target']['lineColor'],
-                                     fillColor = cfg['stimuli']['target']['fillColor'],
+                                     edges = stimuli['target']['edges'],
+                                     lineWidth = stimuli['target']['lineWidth'],
+                                     lineColor = stimuli['target']['lineColor'],
+                                     fillColor = stimuli['target']['fillColor'],
                                      radius = self.target_radius)
 
         self.cursor = visual.Circle( win = self.win,
-                                     edges = cfg['stimuli']['cursor']['edges'],
-                                     lineWidth = cfg['stimuli']['cursor']['lineWidth'],
-                                     lineColor = cfg['stimuli']['cursor']['lineColor'],
-                                     fillColor = cfg['stimuli']['cursor']['fillColor'],
+                                     edges = stimuli['cursor']['edges'],
+                                     lineWidth = stimuli['cursor']['lineWidth'],
+                                     lineColor = stimuli['cursor']['lineColor'],
+                                     fillColor = stimuli['cursor']['fillColor'],
                                      radius = self.cursor_radius)
 
         # there are no:
@@ -239,7 +245,7 @@ class monitorDisplay:
 
         self.trialcounter = visual.TextStim( win = self.win,
                                              text = '0/0',
-                                             pos = self.trailcounter_pos,
+                                             pos = self.trialcounter_pos,
                                              height = self.trialcounter_height)
 
         # instructions will be in the middle of the screen:
@@ -279,7 +285,7 @@ class monitorDisplay:
 #         print(s)
 
 
-import copy
+
 
 # if we want to separate tracking trajectories from visual stimuli,
 # we want to use iohub

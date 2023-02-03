@@ -19,7 +19,7 @@
     "devices": {
       "display": {
         "type": "monitor",
-        "screen_idx": 1,
+        "screen_idx": 0,
         "size_px": [
           1680,
           1050

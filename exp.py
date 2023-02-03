@@ -1,3 +1,4 @@
+import hw
 import random, json, copy, math
 
 def runExperiment(jsonfile, participant):
@@ -11,7 +12,7 @@ def runExperiment(jsonfile, participant):
 
     cfg = getTrialSequence(cfg)
 
-    cfg = setupHardware(cfg)
+    cfg = hw.setupHardware(cfg)
 
     cfg = runTrialSequence(cfg)
 
@@ -110,8 +111,6 @@ def addTaskTrials(cfg, el):
     return(cfg)
 
 def addSuperTaskTrials(cfg, el):
-
-    print('adding super task...')
 
     nsubtasks = len(el['subtasks'])
     nproperties = len(el['properties'])
