@@ -40,7 +40,8 @@ cfg['settings']['devices'] = {}
 cfg['settings']['devices']['display'] = {
       "type"       : "monitor",
       "screen_idx" : 0,
-      "size_px"    : [1680, 1050],
+      # "size_px"    : [1680, 1050], # external monitor on mirror box
+      "size_px"    : [1920, 1080], # my laptop
       "size_cm"    : [43.3, 27.1],
       "viewscale"  : [-1,-1],
       "gammafile"  : "DellE2009Wt.csv"

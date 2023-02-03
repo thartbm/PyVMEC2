@@ -88,22 +88,61 @@ class monitorDisplay:
 
     def __init__(self, cfg):
 
-        self.screen_idx = copy.deepcopy(cfg['settings']['devices']['display']['screen_idx'])
-        self.size_px    = copy.deepcopy(cfg['settings']['devices']['display']['size_px'])
-        self.size_cm    = copy.deepcopy(cfg['settings']['devices']['display']['size_cm'])
-        self.viewscale  = copy.deepcopy(cfg['settings']['devices']['display']['viewscale'])
-        self.gammafile  = copy.deepcopy(cfg['settings']['devices']['display']['gammafile'])
+        display = copy.deepcopy(cfg['settings']['devices']['display'])
+
+        # for these properties there are sensible defaults:
+        if 'screen_idx' in display.keys():
+            self.screen_idx = display['screen_idx']
+        else:
+            self.screen_idx = 0
+        if 'gammafile' in display.keys():
+            self.gammafile = display['gammafile']
+        else:
+            self.gammafile = None
+        if 'viewscale' in display.keys():
+            self.viewscale = display['viewscale']
+        else:
+            self.viewscale = [1,1]
 
         # with the pyglet backend you can specify a monitor index directly,
         # but if we use screeninfo, that's not necessary
-        # however, we want to use pyglet, so we can use the iohub
+        # we want to use pyglet anyway, so we can use the iohub
+        # still we get the screeninfo, as it's useful to have
         if (isinstance(self.screen_idx, int)):
-            s = screeninfo.get_monitors()[self.screen_idx]
+            self.si = screeninfo.get_monitors()[self.screen_idx]
         else:
             # pick the first monitor? maybe not a good default...
-            s = screeninfo.get_monitors()[0]
+            self.si = screeninfo.get_monitors()[0]
 
-        self.pos = [s.x, s.y]
+        # pixel size is necessary, it should be in screeninfo:
+        if 'size_px' in display.keys():
+            self.size_px = display['size_px']
+            if ('size_px' == None):
+                self.size_px = [self.si.width, self.si.height]
+            fullscreen = True
+            if ((self.si.width != self.size_px[0]) or (self.si.height != self.size_px[1])):
+                print('physical monitor reports different pixel size than configured')
+                print('using configured pixel size in windowed mode')
+                print('this may invalidate physical size')
+                fullscreen = False
+        else:
+            self.size_px = [self.si.width, self.si.height]
+            fullscreen = True
+
+        # physical size is nice, but normalized units are acceptable
+        if 'size_cm' in display.keys():
+            self.size_cm = display['size_cm']
+            self.units = 'cm'
+        else:
+            if (cfg['settings']['preferred_unit'] == 'cm' and isinstance(self.si.width_mm, int) and isinstance(self.si.height_mm, int)):
+                self.units = 'cm'
+                self.size_cm = [self.si.width_mm/10., self.si.height_mm/10.]
+        if (self.size_cm == None):
+            self.units = 'norm'
+
+
+        # we'd need this to create the window as well:
+        self.pos = [self.si.x, self.si.y]
 
         # load gammagrid from stored file
         if (self.gammafile == None):
@@ -120,39 +159,39 @@ class monitorDisplay:
         #     print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')
         # tempmonitor =
 
-        print(self.gg)
+        # print(self.gg)
 
-        if (self.size_px == None):
-            try:
-                self.size_px = [s.width, s.height]
-                fullscreen = True
-            except e:
-                print(e)
-                self.size_px = [400,300]
-                fullscreen = False
-        else:
-            fullscreen = True
-            if ((s.width != self.size_px[0]) or (s.height != self.size_px[1])):
-                print('user-defined monitor pixel size does not match screeninfo')
-                print('trying to set the user-defined monitor pixel size')
+        # if (self.size_px == None):
+        #     try:
+        #         self.size_px = [s.width, s.height]
+        #         fullscreen = True
+        #     except e:
+        #         print(e)
+        #         self.size_px = [400,300]
+        #         fullscreen = False
+        # else:
+        #     fullscreen = True
+        #     if ((s.width != self.size_px[0]) or (s.height != self.size_px[1])):
+        #         print('user-defined monitor pixel size does not match screeninfo')
+        #         print('trying to set the user-defined monitor pixel size')
 
 
-        # make window object using the tempmonitor and viewScale
-        if (self.size_cm == None):
-            # the only options available would be pixels or normalized
-            # we pick normalized, so we tell the psychopy windows object
-            self.units = 'norm'
-            # but this _can_ be overruled -- if we have the necessary info:
-            if (cfg['settings']['preferred_unit'] == 'cm' and isinstance(s.width_mm, int) and isinstance(s.height_mm, int)):
-                self.units = 'cm'
-                self.size_cm = [s.width_mm/10., s.height_mm/10.]
-                print('using the screeninfo monitor size in centimeters')
-        else:
-            # now we can have cm available as well
-            self.units = 'cm'
-            if (((s.width_mm/10.) != self.size_cm[0]) or ((s.height_mm/10.) != slef.size_cm[1])):
-                print('user-defined monitor centimeter size does not match screeninfo')
-                print('keeping the user-defined monitor centimeter size')
+        # # make window object using the tempmonitor and viewScale
+        # if (self.size_cm == None):
+        #     # the only options available would be pixels or normalized
+        #     # we pick normalized, so we tell the psychopy windows object
+        #     self.units = 'norm'
+        #     # but this _can_ be overruled -- if we have the necessary info:
+        #     if (cfg['settings']['preferred_unit'] == 'cm' and isinstance(s.width_mm, int) and isinstance(s.height_mm, int)):
+        #         self.units = 'cm'
+        #         self.size_cm = [s.width_mm/10., s.height_mm/10.]
+        #         print('using the screeninfo monitor size in centimeters')
+        # else:
+        #     # now we can have cm available as well
+        #     self.units = 'cm'
+        #     if (((s.width_mm/10.) != self.size_cm[0]) or ((s.height_mm/10.) != slef.size_cm[1])):
+        #         print('user-defined monitor centimeter size does not match screeninfo')
+        #         print('keeping the user-defined monitor centimeter size')
 
         # now we create the actual window object:
         self.createWindow(cfg)
