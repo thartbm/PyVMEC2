@@ -1,7 +1,9 @@
 from exp import *
-from psychopy import core, visual, monitors
+from psychopy import core, visual, monitors, event
 import numpy as np
 import screeninfo, copy, os
+from time import time
+
 
 
 # let's try using the psychopy IOHUB server system
@@ -63,7 +65,8 @@ def setupHardware(cfg):
 
     # winType='pyglet'
 
-    cfg['hw']['io'] = launchHubServer()
+    # cfg['hw']['io'] = launchHubServer(win=cfg['hw']['display'].win)
+    # ok, no IOhub for now... it throws errors
 
 
 # gammaGrid = np.array([[  0., 107.28029,  2.8466334, np.nan, np.nan, np.nan],
@@ -229,6 +232,8 @@ class monitorDisplay:
             self.target_radius = (stimuli['target']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
             self.cursor_radius = (stimuli['cursor']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
 
+        cfg['hw']['win'] = self.win
+
 
 
     def createStimuli(self, cfg):
@@ -238,6 +243,9 @@ class monitorDisplay:
         # a target position (open circle)
         # a cursor (a filled disc)
 
+        # maybe initial positions should be way of the screen... depends on the unit?
+        off_pos = [max(self.size_px)*3,max(self.size_px)*3]
+
         stimuli = copy.deepcopy(cfg['settings']['stimuli'])
 
         self.home = visual.Circle( win = self.win,
@@ -245,31 +253,28 @@ class monitorDisplay:
                                    lineWidth = stimuli['home']['lineWidth'],
                                    lineColor = stimuli['home']['lineColor'],
                                    fillColor = stimuli['home']['fillColor'],
-                                   radius = self.home_radius)
+                                   radius = self.home_radius,
+                                   pos = off_pos)
 
         self.target = visual.Circle( win = self.win,
                                      edges = stimuli['target']['edges'],
                                      lineWidth = stimuli['target']['lineWidth'],
                                      lineColor = stimuli['target']['lineColor'],
                                      fillColor = stimuli['target']['fillColor'],
-                                     radius = self.target_radius)
+                                     radius = self.target_radius,
+                                     pos = off_pos)
 
         self.cursor = visual.Circle( win = self.win,
                                      edges = stimuli['cursor']['edges'],
                                      lineWidth = stimuli['cursor']['lineWidth'],
                                      lineColor = stimuli['cursor']['lineColor'],
                                      fillColor = stimuli['cursor']['fillColor'],
-                                     radius = self.cursor_radius)
+                                     radius = self.cursor_radius,
+                                     pos = off_pos)
 
-        # there are no:
-        # - return feedback arrowhead
-        # - return feedback circle
-        # - aiming arrow
-        # - aiming landmarks
-
-        # we should probably have two text objects:
-        # - for the number of remaining trials
-        # - for instructions
+        # ADD TEXT STIMULI
+        # - trial counter
+        # - instructions
 
         # we put the counter in the top-left corner
 
@@ -278,6 +283,7 @@ class monitorDisplay:
         if (self.units == 'cm'):
             self.trialcounter_pos = [-1 * cfg['settings']['basictrial']['targetdistance_cm'], 1 * cfg['settings']['basictrial']['targetdistance_cm']]
             self.trialcounter_height = 0.05 * min(self.size_cm)
+
         if (self.units == 'norm'):
             self.trialcounter_pos = [-1 * cfg['settings']['basictrial']['targetdistance_norm'], 1 * cfg['settings']['basictrial']['targetdistance_norm']]
             self.trialcounter_height = 0.05 * min(self.size_norm)
@@ -291,13 +297,22 @@ class monitorDisplay:
         self.instructions_pos = [0, 0]
         if (self.units == 'cm'):
             self.instructions_height = 0.05 * min(self.size_cm)
+
         if (self.units == 'norm'):
             self.instructions_height = 0.05 * min(self.size_norm)
 
         self.instructions = visual.TextStim( win = self.win,
-                                             text = '0/0',
+                                             text = '[no instructions]',
                                              pos = self.instructions_pos,
                                              height = self.instructions_height)
+
+
+        # there are no:
+        # - return feedback arrowhead
+        # - return feedback circle
+        # - aiming arrow
+        # - aiming landmarks
+
 
         # and we might want to have some graphics objects:
         # - for showing larger images (as visual instructions)
@@ -334,11 +349,32 @@ class tabletTracker:
 
     def __init__(self, cfg):
 
-        self.size_cm = copy.deepcopy(cfg['settings']['devices']['tracker']['size_cm'])
-        self.size_px = copy.deepcopy(cfg['settings']['devices']['tracker']['size_px'])
-        self.offset_cm = copy.deepcopy(cfg['settings']['devices']['tracker']['offset_cm'])
+        tracker = copy.deepcopy(cfg['settings']['devices']['tracker'])
 
+        # for a tablet tracker, we can't get physical dimensions
+        # so if it fails, set a mouse tracker instead, outside this object
 
+        if ('size_cm' in tracker.keys()):
+            self.size_cm = tracker['size_cm']
+        if ('size_px' in tracker.keys()):
+            self.size_px = tracker['size_px']
+        if ('offset_cm' in tracker.keys()):
+            self.offset_cm = tracker['offset_cm']
+
+        self.psymouse = event.Mouse( visible = False,
+                                     newPos = None,
+                                     win = cfg['hw']['display'].win )
+
+    def pos(self):
+        [X,Y] = self.psymouse.getPos()
+        return( [X,Y,time()] )
+    # class myMouse:
+    #     def Pos(self):
+    #         #print('PsychoPy mouse')
+    #         [X,Y] = cfg['psyMouse'].getPos()
+    #         return [X,Y,time()]
+    #
+    # cfg['mouse'] = myMouse()
 
 # cfg['settings']['devices']['tracker'] = {
 #       "type"       : "tablet",
