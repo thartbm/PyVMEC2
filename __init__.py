@@ -1,3 +1,5 @@
+#!pyenv 3.8.10
+
 from hw import *
 from exp import *
 
