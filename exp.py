@@ -182,6 +182,16 @@ def seedRNG(cfg):
 
     return
 
+def runTrialSequence(cfg):
+
+    cfg['trialidx'] = 0
+
+    while cfg['trialidx'] < len(cfg['triallist']):
+
+        print(cfg['trialidx'])
+
+        cfg['trialidx'] +=1
+
 
 
 # cfg = getTrialSequence( {'jsonfile' : 'diagnostic triplets.json',

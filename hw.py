@@ -361,20 +361,16 @@ class tabletTracker:
         if ('offset_cm' in tracker.keys()):
             self.offset_cm = tracker['offset_cm']
 
+        # this SHOULD link the mouse/tablet to the window object
+        # and use the units set for the window object
         self.psymouse = event.Mouse( visible = False,
                                      newPos = None,
                                      win = cfg['hw']['display'].win )
+        # for an actual MOUSE, the normalized position should be stored
 
     def pos(self):
         [X,Y] = self.psymouse.getPos()
         return( [X,Y,time()] )
-    # class myMouse:
-    #     def Pos(self):
-    #         #print('PsychoPy mouse')
-    #         [X,Y] = cfg['psyMouse'].getPos()
-    #         return [X,Y,time()]
-    #
-    # cfg['mouse'] = myMouse()
 
 # cfg['settings']['devices']['tracker'] = {
 #       "type"       : "tablet",
