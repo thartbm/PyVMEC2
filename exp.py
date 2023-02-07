@@ -192,6 +192,10 @@ def runTrialSequence(cfg):
 
         cfg['trialidx'] +=1
 
+        thistrial = cfg['triallist'][cfg['trialidx']]
+
+        
+
 
 
 # cfg = getTrialSequence( {'jsonfile' : 'diagnostic triplets.json',
