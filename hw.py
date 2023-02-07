@@ -61,7 +61,15 @@ def setupHardware(cfg):
         # that's where a dummyDisplay comes in, but we don't need it now
 
 
+    # THESE ARE LARGELY THE SAME (for now) MERGE OBJECTS?
+    if cfg['settings']['devices']['tracker']['type'] == "tablet":
+        cfg['hw']['tracker'] = tabletTracker(cfg)
+    if cfg['settings']['devices']['tracker']['type'] == "mouse":
+        cfg['hw']['tracker'] = mouseTracker(cfg)
 
+
+
+    return(cfg)
 
     # winType='pyglet'
 
@@ -366,11 +374,17 @@ class tabletTracker:
         self.psymouse = event.Mouse( visible = False,
                                      newPos = None,
                                      win = cfg['hw']['display'].win )
+
+        self.xscale = 1
+        self.yscale = 1
         # for an actual MOUSE, the normalized position should be stored
 
     def pos(self):
         [X,Y] = self.psymouse.getPos()
-        return( [X,Y,time()] )
+        tp = time()
+        X = X * self.xscale
+        Y = Y * self.yscale
+        return( [X,Y, tp] )
 
 # cfg['settings']['devices']['tracker'] = {
 #       "type"       : "tablet",
