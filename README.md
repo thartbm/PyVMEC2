@@ -61,8 +61,28 @@ pyenv global 3.8.10
 
 # PsychoPy
 
-Within this Python 3.8.10 environment you can then install everything necessary to run PyVMEC2.
+You can then install everything necessary to run PyVMEC2, still from commandline:
 
 ```
 pip3 install psychopy==2021.2.3 wxwidgets ipython
 ```
+
+(Seems that wxwidgets is version 1.0.5, and ipython is 8.9.0 if that helps.)
+
+
+# Numpy
+
+The newest versions of numpy use built-in float and int types, but PsychoPy doesn;t, so we need an old numpy:
+
+```
+pip3 install numpy=1.22
+```
+
+# Screeninfo
+
+For reading out information about monitors, we use the `screeninfo` module (version 0.8.1 currently):
+
+```
+pip3 install screeninfo
+```
+
