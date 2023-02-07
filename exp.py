@@ -190,12 +190,19 @@ def runTrialSequence(cfg):
 
         print(cfg['trialidx'],' / ', len(cfg['triallist']))
 
-        cfg['trialidx'] +=1
 
         thistrial = cfg['triallist'][cfg['trialidx']]
 
+        cfg = runTrial(cfg)
 
+        # this has to be at the very end!
+        cfg['trialidx'] +=1
 
+        # well... before this:
+
+        # SAVE TRIAL DATA!
+        # &
+        # STORE JSON!
 
 
 # cfg = getTrialSequence( {'jsonfile' : 'diagnostic triplets.json',
