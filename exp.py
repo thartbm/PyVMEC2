@@ -106,6 +106,13 @@ def addTaskTrials(cfg, el):
         for vpn in var_prop_names:
             thistrial[vpn] = variable_properties[vpn][trialno]
 
+        unkeys = ['trials']
+        for k in unkeys:
+            if (k in thistrial.keys()):
+                del thistrial[k]
+
+        thistrial['type'] = 'trial'
+
         cfg['triallist'] += [thistrial]
 
     return(cfg)
@@ -203,6 +210,10 @@ def runTrialSequence(cfg):
         # &
         # STORE JSON!
 
+
+def runTrial(cfg):
+
+    return(cfg)
 
 # cfg = getTrialSequence( {'jsonfile' : 'diagnostic triplets.json',
 #                          'participant' : 'marius' } ) # participant ID seeds RNG
