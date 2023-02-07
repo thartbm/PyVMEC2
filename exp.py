@@ -197,7 +197,7 @@ def runTrialSequence(cfg):
 
         print('trial: ',cfg['trialidx'],' / ', len(cfg['triallist']))
 
-        print(cfg['triallist'][cfg['trialidx']])
+        print(cfg['triallist'][cfg['trialidx']]['type'])
 
         cfg = runTrial(cfg)
 
