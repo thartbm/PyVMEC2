@@ -242,18 +242,25 @@ def runTrialSequence(cfg):
 
         storeJSON(cfg)
 
+    cfg['hw']['display'].shutDown()
+
     return(cfg)
 
 
 def runTrial(cfg):
 
-    targetPos = getTargetPos(cfg)
-    homePos = [0,0]
-
     trialdict = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']])
 
+    targetPos = getTargetPos(cfg)
+    targetangle_deg = trialdict['target']
+    targetangle_rad = (targetangle_deg/180) * math.pi
+
+    homePos = [0,0] # this could be changed at some point?
+
+
     # three kinds of perturbations of visual feedback:
-    rotation = trialdict['rotation']
+    rotation_deg = trialdict['rotation']
+    rotation_rad = (rotation_deg/180)*math.pi
     errorgain = 1
     # distancegain = 1 # NO USE FOR THIS YET: IMPLEMENT LATER
 
@@ -294,6 +301,7 @@ def runTrial(cfg):
     # 5 = at home... wait for some short period?
     # 6 = post-trial period... ? maybe?
 
+    home_target_distance = getDistance(homePos, targetPos)
 
     inprogress = True
     step = -3
@@ -303,27 +311,87 @@ def runTrial(cfg):
         [X,Y,time_s] = cfg['hw']['tracker'].getPos()
         trackerPos = [X,Y]
 
+        cursorPos = trackerPos
+
+
+        home_cursor_distance = getDistance(homePos, cursorPos)
+        target_cursor_distance = getDistance(targetPos, cursorPos)
+
+
+        if clamped:
+            cursorPos = [homePos[0] + (math.cos(targetangle_rad)*home_cursor_distance),
+                         homePos[1] + (math.sin(targetangle_rad)*home_cursor_distance)]
+
+        if rotation_deg != 0:
+            relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
+            unrot = -1 * targetangle_rad
+            relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
+                                 (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
+            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0])
+
+            cursorPos = [math.cos(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance,
+                         math.sin(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance]
+
+
+
+        # STEPS NEED TO BE TAKEN:
         if step < 0:
             # SPLIT FOR HOLD PERIODS... right now: only the go to home part
+            if (home_cursor_distance <= home_radius):
+                #print('entering step 0')
+                step = 0
+
+        if step == 0:
+            if (home_cursor_distance > home_radius):
+                #print('entering step 1')
+                step = 1
+
+        if step == 1:
+            # IF criterion is DISTANCE:
+            if (home_cursor_distance > (home_target_distance - target_radius)):
+                #print('entering step 2')
+                step = 2
+
+            # acquire:
+            # if (target_cursor_distance < target_radius):
+            #     step == 2
+
+        if step == 2:
+            if (home_cursor_distance < (home_target_distance - target_radius)):
+                #print('entering step 4')
+                step = 4
+
+            # acquire:
+            # if (target_cursor_distance > target_radius):
+            #     step == 4
+
+        if step == 3:
+            # this would be a HOLD at the target (skipping for now)
+            pass
+
+        if step == 4:
+            if (home_cursor_distance < home_radius):
+                #print('entering current final step')
+                step = 5
+                inprogress = False
+                # back at home
+                # for now: nothing else happens but we can have a 5th and 6th step later on
 
 
+        if (step in [-3, -2, -1, 0, 2, 3, 4]):
+            cfg['hw']['display'].showHome(homePos)
 
+        if (step in [0, 1, 2]):
+            cfg['hw']['display'].showTarget(targetPos)
 
+        cfg['hw']['display'].showCursor(cursorPos)
 
+        cfg['hw']['display'].doFrame()
 
-
-
-
-
-
-
-
-
-
-
-
-
-    trialdata = trialdict
+        trialdata['handx'].append(trackerPos[0])
+        trialdata['handy'].append(trackerPos[1])
+        trialdata['time'].append(time_s)
+        trialdata['step'].append(step)
 
     return([cfg, trialdata])
 
@@ -357,9 +425,17 @@ def getRadii(cfg):
 
     # convert to norm units, if display uses those:
     if (cfg['hw']['display'].units == 'norm'):
+        # for now: NO CONVERSION!
         [home_radius, target_radius, cursor_radius] = cfg['hw']['display'].cm2norm([home_radius, target_radius, cursor_radius])
 
     return([home_radius, target_radius, cursor_radius])
+
+def getDistance(pos_a, pos_b=None):
+
+    if pos_b == None:
+        pos_b = [0,0]
+
+    return( math.sqrt( (pos_a[0]-pos_b[0])**2 + (pos_a[1]-pos_b[1])**2 ) )
 
 def runPause(cfg):
 

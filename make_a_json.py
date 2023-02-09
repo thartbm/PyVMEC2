@@ -129,14 +129,14 @@ cfg['experiment'].append( { 'type':'task',
                              'cursor':'normal',
                              'target': 90 ,
                              'rotation': 0 ,
-                             'trials': 15 ,
+                             'trials': 6 ,
                              'order' : {'target' : 'random',
                                         'rotation' : 'pseudorandom'} } )
 
 cfg['experiment'].append( { 'type':'supertask',
                              'name':'triplets',
                              'taskorder':'fixed', # these task are always done in the same order
-                             'repeats':9,
+                             'repeats':2,
                              'properties':{ 'rotation': {'order':'pseudorandom', # the values are randomized across repeat of all subtasks
                                                          'values': [[0],[5,10,15],[0],[0]] }, # four values: one for each of the subtasks
                                             'trials' : {'order':'pseudorandom',

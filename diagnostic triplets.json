@@ -95,7 +95,7 @@
       "cursor": "normal",
       "target": 90,
       "rotation": 0,
-      "trials": 15,
+      "trials": 6,
       "order": {
         "target": "random",
         "rotation": "pseudorandom"
@@ -105,7 +105,7 @@
       "type": "supertask",
       "name": "triplets",
       "taskorder": "fixed",
-      "repeats": 9,
+      "repeats": 2,
       "properties": {
         "rotation": {
           "order": "pseudorandom",

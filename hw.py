@@ -258,7 +258,7 @@ class monitorDisplay:
         # a cursor (a filled disc)
 
         # maybe initial positions should be way of the screen... depends on the unit?
-        off_pos = [max(self.size_px)*3,max(self.size_px)*3]
+        self.off_pos = [max(self.size_px)*3,max(self.size_px)*3]
 
         stimuli = copy.deepcopy(cfg['settings']['stimuli'])
 
@@ -268,7 +268,7 @@ class monitorDisplay:
                                    lineColor = stimuli['home']['lineColor'],
                                    fillColor = stimuli['home']['fillColor'],
                                    radius = self.home_radius,
-                                   pos = off_pos)
+                                   pos = self.off_pos)
 
         self.target = visual.Circle( win = self.win,
                                      edges = stimuli['target']['edges'],
@@ -276,7 +276,7 @@ class monitorDisplay:
                                      lineColor = stimuli['target']['lineColor'],
                                      fillColor = stimuli['target']['fillColor'],
                                      radius = self.target_radius,
-                                     pos = off_pos)
+                                     pos = self.off_pos)
 
         self.cursor = visual.Circle( win = self.win,
                                      edges = stimuli['cursor']['edges'],
@@ -284,7 +284,7 @@ class monitorDisplay:
                                      lineColor = stimuli['cursor']['lineColor'],
                                      fillColor = stimuli['cursor']['fillColor'],
                                      radius = self.cursor_radius,
-                                     pos = off_pos)
+                                     pos = self.off_pos)
 
         # ADD TEXT STIMULI
         # - trial counter
@@ -320,6 +320,30 @@ class monitorDisplay:
                                              pos = self.instructions_pos,
                                              height = self.instructions_height)
 
+    def showHome(self, homePos):
+        self.home.pos = homePos
+        self.home.draw()
+
+    def showTarget(self, targetPos):
+        self.target.pos = targetPos
+        self.target.draw()
+
+    def showCursor(self, cursorPos):
+        self.cursor.pos = cursorPos
+        self.cursor.draw()
+
+    def doFrame(self):
+        # show stimuli:
+        self.win.flip()
+
+        # move stimuli off screen for now:
+        self.home.pos = self.off_pos
+        self.target.pos = self.off_pos
+        self.cursor.pos = self.off_pos
+
+    def shutDown(self):
+
+        self.win.close()
 
         # there are no:
         # - return feedback arrowhead
