@@ -1,5 +1,6 @@
 import hw
 import random, json, copy, math
+import numpy as np
 
 def runExperiment(jsonfile, participant):
 
@@ -191,29 +192,202 @@ def seedRNG(cfg):
 
 def runTrialSequence(cfg):
 
-    cfg['trialidx'] = 0
+    cfg['run'] = {}
 
-    while cfg['trialidx'] < len(cfg['triallist']):
+    cfg['run']['trialidx'] = 0
 
-        print('trial: ',cfg['trialidx'],' / ', len(cfg['triallist']))
+    performance = {}
+    performance['targetangle_deg']    = []
+    performance['feedbacktype']       = []
+    performance['aimdeviation_deg']   = []
+    performance['reachdeviation_deg'] = []
+    performance['reactiontime_s']     = []
+    performance['movementtime_s']     = []
 
-        print(cfg['triallist'][cfg['trialidx']]['type'])
+    cfg['run']['performance'] = performance
 
-        cfg = runTrial(cfg)
+    while cfg['run']['trialidx'] < len(cfg['triallist']):
+
+        print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['triallist']))
+
+        trialtype = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']]['type'])
+
+        print('type:',   trialtype,
+              'cursor:', cfg['triallist'][cfg['run']['trialidx']]['cursor'],
+              'rot:',    cfg['triallist'][cfg['run']['trialidx']]['rotation'],
+              'target:', cfg['triallist'][cfg['run']['trialidx']]['target'])
+
+        # THIS IS WHERE CODE COULD BE RUN?
+        # if ...
+        #
+
+        if trialtype == 'trial':
+
+            [cfg, trialdata] = runTrial(cfg=cfg)
+
+            # SAVE TRIAL DATA as file
+            saveTrialdata(cfg=cfg, trialdata=trialdata)
+
+            # store stuff in performance as well
+            cfg = storePerformance(cfg=cfg, trialdata=trialdata)
+
+        if trialtype == 'pause':
+            cfg = runPause(cfg) # NOT WRITTEN YET!
 
         # this has to be at the very end!
-        cfg['trialidx'] +=1
+        cfg['run']['trialidx'] +=1
 
         # well... before this:
-
-        # SAVE TRIAL DATA!
-        # &
         # STORE JSON!
+
+        storeJSON(cfg)
+
+    return(cfg)
 
 
 def runTrial(cfg):
 
+    targetPos = getTargetPos(cfg)
+    homePos = [0,0]
+
+    trialdict = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']])
+
+    # three kinds of perturbations of visual feedback:
+    rotation = trialdict['rotation']
+    errorgain = 1
+    # distancegain = 1 # NO USE FOR THIS YET: IMPLEMENT LATER
+
+    if trialdict['cursor'] == 'clamped':
+        clamped = True
+    else:
+        clamped = False
+
+
+    # we need the radius of things:
+    [home_radius, target_radius, cursor_radius] = getRadii(cfg)
+
+
+    # feedbacktypes:
+    # - cursor (regular / default)
+    # - no-cursor (for reach aftereffects)
+    # - clamped (this can have a rotation or distancegain perturbation, but not the errorgain)
+
+    # we collect data about the trial here:
+    trialdata = copy.deepcopy(trialdict)
+    # we add lists to collect the trajectory:
+    trialdata['handx'] = []
+    trialdata['handy'] = []
+    trialdata['time'] = []
+    trialdata['step'] = []
+    # what else?
+
+
+    # STEPS:
+    # -3 = get to home position before actual trial starts
+    # -2 = hold - without target (timehold)
+    # -1 = hold - with target (prephold)
+    # 0 = at home, start moving
+    # 1 = left home, moving to target
+    # 2 = arrived at target (wait/hold at target?) (or target-distance)
+    # 3 = at target, home is there: start moving (or target-distance)
+    # 4 = moving back, not there yet
+    # 5 = at home... wait for some short period?
+    # 6 = post-trial period... ? maybe?
+
+
+    inprogress = True
+    step = -3
+    while inprogress:
+
+        # visual feedback location depends on real location as well:
+        [X,Y,time_s] = cfg['hw']['tracker'].getPos()
+        trackerPos = [X,Y]
+
+        if step < 0:
+            # SPLIT FOR HOLD PERIODS... right now: only the go to home part
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    trialdata = trialdict
+
+    return([cfg, trialdata])
+
+def getTargetPos(cfg):
+
+    # get target angle:
+    trialdict = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']])
+
+    # we need angle and distance:
+    angle = trialdict['target']
+    rad = (angle/180) * math.pi
+
+    # do we use norm or cm distance? depends on display-unit:
+    if (cfg['hw']['display'].units == 'cm'):
+        dist = trialdict['targetdistance_cm']
+    if (cfg['hw']['display'].units == 'norm'):
+        dist = trialdict['targetdistance_norm']
+
+    X = math.cos(rad) * dist
+    Y = math.sin(rad) * dist
+
+    return([X,Y])
+
+def getRadii(cfg):
+
+    stimuli = copy.deepcopy(cfg['settings']['stimuli'])
+
+    home_radius = stimuli['home']['radius_cm']
+    target_radius = stimuli['target']['radius_cm']
+    cursor_radius = stimuli['cursor']['radius_cm']
+
+    # convert to norm units, if display uses those:
+    if (cfg['hw']['display'].units == 'norm'):
+        [home_radius, target_radius, cursor_radius] = cfg['hw']['display'].cm2norm([home_radius, target_radius, cursor_radius])
+
+    return([home_radius, target_radius, cursor_radius])
+
+def runPause(cfg):
+
     return(cfg)
 
-# cfg = getTrialSequence( {'jsonfile' : 'diagnostic triplets.json',
-#                          'participant' : 'marius' } ) # participant ID seeds RNG
+def saveTrialdata(cfg, trialdata):
+
+    # get path from cfg
+    # convert trialdata to csv file
+    # store in separate trial file
+
+    return
+
+def storePerformance(cfg, trialdata):
+
+    # extract target angle
+    # extract feedback type
+    # extract aim-deviation (or set to None?)
+    # extract reach deviation at X percent, or some given distance
+    # extract reaction time (time between GO and leaving HOME)
+    # extract movement time (time between leaving HOME and reaching TARGET)
+
+    # other stuff:
+    # see if hold was correct? (0/1)
+    # see if time/accuracy criteria were met? (0/1)
+
+    return(cfg)
+
+def storeJSON(cfg):
+
+    return

@@ -110,6 +110,8 @@ class monitorDisplay:
             self.gammafile = display['gammafile']
         else:
             self.gammafile = None
+
+        # do we want a viewscale still? cm units make this superfluous...
         if 'viewscale' in display.keys():
             self.viewscale = display['viewscale']
         else:
@@ -155,17 +157,21 @@ class monitorDisplay:
         # we'd need this to create the window as well:
         self.pos = [self.si.x, self.si.y]
 
+        default_gg = np.array([[0., 1., 1., np.nan, np.nan, np.nan],
+                               [0., 1., 1., np.nan, np.nan, np.nan],
+                               [0., 1., 1., np.nan, np.nan, np.nan],
+                               [0., 1., 1., np.nan, np.nan, np.nan]], dtype=float)
         # load gammagrid from stored file
         if (self.gammafile == None):
             # default gammagrid that leaves the color space as is:
-            self.gg = np.array([[0., 1., 1., np.nan, np.nan, np.nan],
-                                [0., 1., 1., np.nan, np.nan, np.nan],
-                                [0., 1., 1., np.nan, np.nan, np.nan],
-                                [0., 1., 1., np.nan, np.nan, np.nan]], dtype=float)
+            self.gg = default_gg
         if (isinstance(self.gammafile, str)):
             # probably a filename
-            self.gg = np.loadtxt(fname='ggs/%s'%self.gammafile,
-                                 delimiter=',')
+            try:
+                self.gg = np.loadtxt(fname='ggs/%s'%self.gammafile, # that path is probably not what we want
+                                     delimiter=',')
+            except:
+                self.gg = default_gg
         # if not(isinstance(self.gg, numpy.ndarray)):
         #     print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')
         # tempmonitor =
@@ -379,7 +385,7 @@ class tabletTracker:
         self.yscale = 1
         # for an actual MOUSE, the normalized position should be stored
 
-    def pos(self):
+    def getPos(self):
         [X,Y] = self.psymouse.getPos()
         tp = time()
         X = X * self.xscale
