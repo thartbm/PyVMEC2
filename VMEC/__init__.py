@@ -1,7 +1,7 @@
 #!pyenv local 3.8.10
 
-from hw import *
-from exp import *
+from VMEC.hw import *
+from VMEC.exp import *
 
 __all__ = [ 'runExperiment',
             'loadJSON',

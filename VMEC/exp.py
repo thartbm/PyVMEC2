@@ -1,4 +1,4 @@
-import hw
+import VMEC.hw as hw
 import random, json, copy, math
 import numpy as np
 

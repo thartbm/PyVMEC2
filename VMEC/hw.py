@@ -1,4 +1,4 @@
-from exp import *
+from VMEC.exp import *
 from psychopy import core, visual, monitors, event
 import numpy as np
 import screeninfo, copy, os
