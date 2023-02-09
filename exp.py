@@ -1,13 +1,13 @@
-import VMEC.hw as hw
+import PyVMEC2.hw as hw
 import random, json, copy, math
 import numpy as np
 
-def runExperiment(jsonfile, participant):
+def runExperiment(experiment, participant):
 
     cfg = {}
 
     cfg['participant'] = participant
-    cfg['jsonfile'] = jsonfile
+    cfg['jsonfile'] = 'experiments/%s/%s.json'%(experiment, experiment)
 
     cfg = loadJSON(cfg)
 
