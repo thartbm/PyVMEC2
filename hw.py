@@ -168,9 +168,11 @@ class monitorDisplay:
         if (isinstance(self.gammafile, str)):
             # probably a filename
             try:
-                self.gg = np.loadtxt(fname='ggs/%s'%self.gammafile, # that path is probably not what we want
+                self.gg = np.loadtxt(fname='experiments/%s/resources/%s'%(cfg['name'],self.gammafile), # that path is probably not what we want
                                      delimiter=',')
+                print('loaded gamma-file')
             except:
+                print('could not load gamma-file, using defaults')
                 self.gg = default_gg
         # if not(isinstance(self.gg, numpy.ndarray)):
         #     print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')

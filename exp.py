@@ -327,7 +327,6 @@ def runTrial(cfg):
             cursorPos = [(relX * math.cos(targetangle_rad)) - (relY * math.sin(targetangle_rad)),
                                  (relX * math.sin(targetangle_rad)) + (relY * math.cos(targetangle_rad))]
 
-
         if rotation_deg != 0:
             relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
             unrot = -1 * targetangle_rad
