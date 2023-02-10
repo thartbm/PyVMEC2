@@ -319,8 +319,14 @@ def runTrial(cfg):
 
 
         if clamped:
-            cursorPos = [homePos[0] + (math.cos(targetangle_rad)*home_cursor_distance),
-                         homePos[1] + (math.sin(targetangle_rad)*home_cursor_distance)]
+            # cursorPos = [homePos[0] + (math.cos(targetangle_rad)*home_cursor_distance),
+            #              homePos[1] + (math.sin(targetangle_rad)*home_cursor_distance)]
+            relX, relY, unrot = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1], -1 * targetangle_rad
+            relX, relY = (relX * math.cos(unrot)) - (relY * math.sin(unrot)), 0
+            #print([relX, relY])
+            cursorPos = [(relX * math.cos(targetangle_rad)) - (relY * math.sin(targetangle_rad)),
+                                 (relX * math.sin(targetangle_rad)) + (relY * math.cos(targetangle_rad))]
+
 
         if rotation_deg != 0:
             relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
