@@ -128,19 +128,20 @@ class monitorDisplay:
             self.si = screeninfo.get_monitors()[0]
 
         # pixel size is necessary, it should be in screeninfo:
+        self.fullscreen = None # use system default?
         if 'size_px' in display.keys():
             self.size_px = display['size_px']
             if ('size_px' == None):
                 self.size_px = [self.si.width, self.si.height]
-            fullscreen = True
+            self.fullscreen = True
             if ((self.si.width != self.size_px[0]) or (self.si.height != self.size_px[1])):
                 print('physical monitor reports different pixel size than configured')
                 print('using configured pixel size in windowed mode')
                 print('this may invalidate physical size')
-                fullscreen = False
+                self.fullscreen = False
         else:
             self.size_px = [self.si.width, self.si.height]
-            fullscreen = True
+            self.fullscreen = True
 
         # physical size is nice, but normalized units are acceptable
         if 'size_cm' in display.keys():
@@ -165,6 +166,7 @@ class monitorDisplay:
         if (self.gammafile == None):
             # default gammagrid that leaves the color space as is:
             self.gg = default_gg
+            print('using default gamma settings')
         if (isinstance(self.gammafile, str)):
             # probably a filename
             try:
@@ -178,7 +180,6 @@ class monitorDisplay:
         #     print('gammafile needs to be None or the name of a csv file with a 4x6 psychopy gammagrid')
         # tempmonitor =
 
-        # print(self.gg)
 
         # if (self.size_px == None):
         #     try:
@@ -223,6 +224,7 @@ class monitorDisplay:
         mymonitor = monitors.Monitor(name='PyVMEC_display')
         mymonitor.setGammaGrid(self.gg)
         mymonitor.setSizePix(self.size_px)
+
         if self.units == 'cm':
             mymonitor.setWidth(self.size_cm[0])
 
@@ -234,7 +236,8 @@ class monitorDisplay:
                                   winType = 'pyglet',
                                   color = [-1,-1,-1],
                                   monitor = self.monitor,
-                                  units = self.units)
+                                  units = self.units,
+                                  fullscr = self.fullscreen)
 
         stimuli = copy.deepcopy(cfg['settings']['stimuli'])
 
@@ -391,6 +394,8 @@ class tabletTracker:
 
         tracker = copy.deepcopy(cfg['settings']['devices']['tracker'])
 
+        print(tracker)
+
         # for a tablet tracker, we can't get physical dimensions
         # so if it fails, set a mouse tracker instead, outside this object
 
@@ -407,8 +412,36 @@ class tabletTracker:
                                      newPos = None,
                                      win = cfg['hw']['display'].win )
 
+
         self.xscale = 1
         self.yscale = 1
+
+        if cfg['hw']['display'].units == 'cm':
+            # maybe we should also check that the physical size of the tablet is available
+
+            aspect_ratio_tablet = self.size_cm[0] / self.size_cm[1]
+            aspect_ratio_screen = cfg['hw']['display'].size_cm[0] / cfg['hw']['display'].size_cm[1]
+
+            if tracker['mapping'] == 'absolute':
+                # a 1:1 ratio between horizontal and vertical distances
+                # good for drawing, but part of the tablet is likely not used
+                # let's determine the effective size:
+                if aspect_ratio_screen > aspect_ratio_tablet:
+                    self.size_cm = [self.size_cm[0], self.size_cm[0]/aspect_ratio_screen]
+                if aspect_ratio_screen < aspect_ratio_tablet:
+                    self.size_cm = [self.size_cm[1]*aspect_ratio_screen, self.size_cm[1]]
+                # if the two aspect ratios are the same, we don't do anything
+
+            # if the mapping is relative, the effective size IS the physical size
+
+            # now we can scale the tablet coordinates
+            # (that are projected to the screen)
+            # such that they become real centimeters
+            self.xscale = self.size_cm[0] / cfg['hw']['display'].size_cm[0]
+            self.yscale = self.size_cm[1] / cfg['hw']['display'].size_cm[1]
+
+
+
         # for an actual MOUSE, the normalized position should be stored
 
     def getPos(self):

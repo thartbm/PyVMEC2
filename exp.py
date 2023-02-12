@@ -252,6 +252,7 @@ def runTrial(cfg):
     trialdict = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']])
 
     targetPos = getTargetPos(cfg)
+    #print(targetPos)
     targetangle_deg = trialdict['target']
     targetangle_rad = (targetangle_deg/180) * math.pi
 
