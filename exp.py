@@ -1,21 +1,64 @@
 import PyVMEC2.hw as hw
-import random, json, copy, math
+import random, json, copy, math, os
 import numpy as np
 
 def runExperiment(experiment, participant):
 
     cfg = {}
 
+    cfg['experiment']
     cfg['participant'] = participant
     cfg['jsonfile'] = 'experiments/%s/%s.json'%(experiment, experiment)
 
-    cfg = loadJSON(cfg)
 
-    cfg = getTrialSequence(cfg)
+    cfg = setupRun(cfg)
 
-    cfg = hw.setupHardware(cfg)
+
 
     cfg = runTrialSequence(cfg)
+
+def setupRun(cfg):
+
+    # setup folders and check if they are already there
+    # (and filled with some data?)
+    [cfg, doCrashRecovery] = setupFolder(cfg)
+
+    if doCrashRecovery:
+        cfg = doCrashRecovery(cfg)
+    else:
+        cfg = loadJSON(cfg)
+        cfg = seedRNG(cfg)
+        cfg = getTrialSequence(cfg)
+
+    # this will have to be done regardless:
+    cfg = hw.setupHardware(cfg)
+
+    return(cfg)
+
+def setupFolder(cfg):
+
+    cfg['path'] = 'experiments/%s/data/%s/'%(cfg['experiment'], cfg['participant'])
+
+    if (os.path.exists(cfg['path'])):
+        print('participant path already exists')
+        doCrashRecovery = True
+    else:
+        os.makedirs(cfg['path'])
+        doCrashRecovery = False
+
+    return([cfg, doCrashRecovery])
+
+def doCrashRecovery(cfg):
+
+    print('crash recovery not implemented: halting')
+    quit()
+
+    # implement:
+    # - get state from state.json on path
+    # - log a crash recovery in the state
+    # - and setup the hardware again (and potentially other non-hashables)
+
+    return(cfg)
 
 def loadJSON(cfg):
 
@@ -25,8 +68,6 @@ def loadJSON(cfg):
     return(cfg)
 
 def getTrialSequence(cfg):
-
-    seedRNG(cfg)
 
     cfg['triallist'] = []
 
@@ -188,7 +229,17 @@ def seedRNG(cfg):
     #sum([ord(l) for l in list(seed_string)])
     random.seed(seed_string)
 
-    return
+    # if we want 2 separate random number generator states, we could use:
+    # random.getstate()
+    # random.setstate()
+    # we keep the two states, and can seed one for the experiment /group
+    # and the other for the individual participant(s)
+    # that means some subtasks or properties can be the same for all participants
+    # but other things are randomized individually
+
+    # for this, we return the cfg dict
+
+    return(cfg)
 
 def runTrialSequence(cfg):
 
@@ -288,7 +339,6 @@ def runTrial(cfg):
     trialdata['time'] = []
     trialdata['step'] = []
     # what else?
-
 
     # STEPS:
     # -3 = get to home position before actual trial starts
@@ -452,6 +502,8 @@ def saveTrialdata(cfg, trialdata):
     # get path from cfg
     # convert trialdata to csv file
     # store in separate trial file
+
+    df = pd.DataFrame(trialdata)
 
     return
 
