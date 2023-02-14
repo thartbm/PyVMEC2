@@ -394,10 +394,14 @@ class tabletTracker:
 
         tracker = copy.deepcopy(cfg['settings']['devices']['tracker'])
 
-        print(tracker)
+        display_size_cm = copy.deepcopy(cfg['hw']['display'].size_cm)
 
         # for a tablet tracker, we can't get physical dimensions
         # so if it fails, set a mouse tracker instead, outside this object
+
+        # this should really be determined based on available data!
+        # for now it is hard-coded
+        self.units = 'cm'
 
         if ('size_cm' in tracker.keys()):
             self.size_cm = tracker['size_cm']
@@ -420,7 +424,7 @@ class tabletTracker:
             # maybe we should also check that the physical size of the tablet is available
 
             aspect_ratio_tablet = self.size_cm[0] / self.size_cm[1]
-            aspect_ratio_screen = cfg['hw']['display'].size_cm[0] / cfg['hw']['display'].size_cm[1]
+            aspect_ratio_screen = display_size_cm[0] / display_size_cm[1]
 
             if tracker['mapping'] == 'absolute':
                 # a 1:1 ratio between horizontal and vertical distances
@@ -437,8 +441,8 @@ class tabletTracker:
             # now we can scale the tablet coordinates
             # (that are projected to the screen)
             # such that they become real centimeters
-            self.xscale = self.size_cm[0] / cfg['hw']['display'].size_cm[0]
-            self.yscale = self.size_cm[1] / cfg['hw']['display'].size_cm[1]
+            self.xscale = self.size_cm[0] / display_size_cm[0]
+            self.yscale = self.size_cm[1] / display_size_cm[1]
 
 
 

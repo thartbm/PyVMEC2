@@ -1,20 +1,19 @@
 import PyVMEC2.hw as hw
-import random, json, copy, math, os
+import random, json, copy, math, os, sys, shutil
 import numpy as np
+
+# to make the scripts leaner, we should use numpy and homebrew for saving csvs, but:
+#import pandas as pd
 
 def runExperiment(experiment, participant):
 
     cfg = {}
-
-    cfg['experiment']
-    cfg['participant'] = participant
-    cfg['jsonfile'] = 'experiments/%s/%s.json'%(experiment, experiment)
-
+    cfg['run'] = {}
+    cfg['run']['experiment'] = experiment
+    cfg['run']['participant'] = participant
+    cfg['run']['jsonfile'] = 'experiments/%s/%s.json'%(experiment, experiment)
 
     cfg = setupRun(cfg)
-
-
-
     cfg = runTrialSequence(cfg)
 
 def setupRun(cfg):
@@ -24,7 +23,7 @@ def setupRun(cfg):
     [cfg, doCrashRecovery] = setupFolder(cfg)
 
     if doCrashRecovery:
-        cfg = doCrashRecovery(cfg)
+        cfg = crashRecovery(cfg)
     else:
         cfg = loadJSON(cfg)
         cfg = seedRNG(cfg)
@@ -32,26 +31,27 @@ def setupRun(cfg):
 
     # this will have to be done regardless:
     cfg = hw.setupHardware(cfg)
-
+    storeJSON(cfg)
     return(cfg)
 
 def setupFolder(cfg):
 
-    cfg['path'] = 'experiments/%s/data/%s/'%(cfg['experiment'], cfg['participant'])
+    cfg['run']['path'] = 'experiments/%s/data/%s/'%(cfg['run']['experiment'], cfg['run']['participant'])
 
-    if (os.path.exists(cfg['path'])):
+    if (os.path.exists(cfg['run']['path'])):
         print('participant path already exists')
         doCrashRecovery = True
     else:
-        os.makedirs(cfg['path'])
+        os.makedirs(cfg['run']['path'])
+        shutil.copy('experiments/%s/%s.json'%(cfg['run']['experiment'],cfg['run']['experiment']),cfg['run']['path'])
         doCrashRecovery = False
 
     return([cfg, doCrashRecovery])
 
-def doCrashRecovery(cfg):
+def crashRecovery(cfg):
 
-    print('crash recovery not implemented: halting')
-    quit()
+    print('crash recovery not implemented: exiting')
+    sys.exit(1)
 
     # implement:
     # - get state from state.json on path
@@ -62,25 +62,25 @@ def doCrashRecovery(cfg):
 
 def loadJSON(cfg):
 
-    with open(cfg['jsonfile']) as fp:
+    with open(cfg['run']['jsonfile']) as fp:
         cfg.update(json.load(fp))
 
     return(cfg)
 
 def getTrialSequence(cfg):
 
-    cfg['triallist'] = []
+    cfg['run']['triallist'] = []
 
-    # simple start:
-    cfg['basictrial'] = {'target'   : 0,
-                         'rotation' : 0,
-                         'cursor'   : 'normal',
-                         'name'     : '' }
+    # # simple start... shouldn't this be in the json?
+    # cfg['run']['basictrial'] = {'target'   : 0,
+    #                             'rotation' : 0,
+    #                             'cursor'   : 'normal',
+    #                             'name'     : '' }
 
     # we can add other functionality later on:
     # - aiming, cursor/target jumps, points... holding home/target
 
-    for el in cfg['experiment']:
+    for el in copy.deepcopy(cfg['experiment']):
 
         if el['type'] == 'task':
 
@@ -155,7 +155,7 @@ def addTaskTrials(cfg, el):
 
         thistrial['type'] = 'trial'
 
-        cfg['triallist'] += [thistrial]
+        cfg['run']['triallist'] += [thistrial]
 
     return(cfg)
 
@@ -214,7 +214,6 @@ def addSuperTaskTrials(cfg, el):
             cfg = addTaskTrials( el = subtask,
                                  cfg = cfg )
 
-
     #print(subtask_properties)
 
     return(cfg)
@@ -222,7 +221,7 @@ def addSuperTaskTrials(cfg, el):
 def seedRNG(cfg):
 
     if cfg['settings']['randomization'] == 'individual':
-        seed_string = copy.deepcopy(cfg['participant'])
+        seed_string = copy.deepcopy(cfg['run']['participant'])
     if cfg['settings']['randomization'] == 'standard':
         seed_string = copy.deepcopy(cfg['name'])
 
@@ -243,30 +242,31 @@ def seedRNG(cfg):
 
 def runTrialSequence(cfg):
 
-    cfg['run'] = {}
-
     cfg['run']['trialidx'] = 0
 
     performance = {}
     performance['targetangle_deg']    = []
+    performance['rotation']           = []
+    performance['errorgain']          = []
     performance['feedbacktype']       = []
-    performance['aimdeviation_deg']   = []
     performance['reachdeviation_deg'] = []
     performance['reactiontime_s']     = []
     performance['movementtime_s']     = []
 
     cfg['run']['performance'] = performance
 
-    while cfg['run']['trialidx'] < len(cfg['triallist']):
+    storeJSON(cfg)
 
-        print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['triallist']))
+    while cfg['run']['trialidx'] < len(cfg['run']['triallist']):
 
-        trialtype = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']]['type'])
+        print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['run']['triallist']))
+
+        trialtype = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']]['type'])
 
         print('type:',   trialtype,
-              'cursor:', cfg['triallist'][cfg['run']['trialidx']]['cursor'],
-              'rot:',    cfg['triallist'][cfg['run']['trialidx']]['rotation'],
-              'target:', cfg['triallist'][cfg['run']['trialidx']]['target'])
+              'cursor:', cfg['run']['triallist'][cfg['run']['trialidx']]['cursor'],
+              'rot:',    cfg['run']['triallist'][cfg['run']['trialidx']]['rotation'],
+              'target:', cfg['run']['triallist'][cfg['run']['trialidx']]['target'])
 
         # THIS IS WHERE CODE COULD BE RUN?
         # if ...
@@ -291,7 +291,7 @@ def runTrialSequence(cfg):
         # well... before this:
         # STORE JSON!
 
-        storeJSON(cfg)
+        storeJSON(cfg) # should this be called "saveState()" ?
 
     cfg['hw']['display'].shutDown()
 
@@ -300,7 +300,7 @@ def runTrialSequence(cfg):
 
 def runTrial(cfg):
 
-    trialdict = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']])
+    trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
 
     targetPos = getTargetPos(cfg)
     #print(targetPos)
@@ -340,6 +340,8 @@ def runTrial(cfg):
     trialdata['step'] = []
     # what else?
 
+    trialdata['targetpos'] = targetPos
+
     # STEPS:
     # -3 = get to home position before actual trial starts
     # -2 = hold - without target (timehold)
@@ -353,6 +355,7 @@ def runTrial(cfg):
     # 6 = post-trial period... ? maybe?
 
     home_target_distance = getDistance(homePos, targetPos)
+    storeJSON(cfg)
 
     inprogress = True
     step = -3
@@ -454,7 +457,7 @@ def runTrial(cfg):
 def getTargetPos(cfg):
 
     # get target angle:
-    trialdict = copy.deepcopy(cfg['triallist'][cfg['run']['trialidx']])
+    trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
 
     # we need angle and distance:
     angle = trialdict['target']
@@ -488,6 +491,9 @@ def getRadii(cfg):
 
 def getDistance(pos_a, pos_b=None):
 
+    # maybe this should be dimensionality agnostic
+    # so it could work in VR too?
+
     if pos_b == None:
         pos_b = [0,0]
 
@@ -503,25 +509,98 @@ def saveTrialdata(cfg, trialdata):
     # convert trialdata to csv file
     # store in separate trial file
 
-    df = pd.DataFrame(trialdata)
+    #print(trialdata)
+
+    samples = len(trialdata['handx'])
+    display_unit = copy.deepcopy(cfg['hw']['display'].units)
+    tracker_unit = copy.deepcopy(cfg['hw']['tracker'].units)
+
+    data = {}
+    data['trial'] = [cfg['run']['trialidx']] * samples
+    data['task'] = [trialdata['name']] * samples
+    data['targetangle_deg'] = [trialdata['target']] * samples
+    data['targetx_%s'%(display_unit)] = [trialdata['targetpos'][0]] * samples
+    data['targety_%s'%(display_unit)] = [trialdata['targetpos'][1]] * samples
+    data['cursor'] = [trialdata['cursor']] * samples
+    data['rotation'] = [trialdata['rotation']] * samples
+    data['handx_%s'%(tracker_unit)] = trialdata['handx']
+    data['handy_%s'%(tracker_unit)] = trialdata['handy']
+    data['time_s'] = trialdata['time']
+    data['step'] = trialdata['step']
+
+    data_array = np.array(tuple(data.values())).T
+
+    filename = '%strial_%04d.csv'%(cfg['run']['path'],cfg['run']['trialidx'])
+
+    header = ','.join(data.keys())
+
+    np.savetxt(filename, data_array, delimiter=',', header=header, fmt='%s', comments="")
 
     return
 
 def storePerformance(cfg, trialdata):
 
-    # extract target angle
-    # extract feedback type
-    # extract aim-deviation (or set to None?)
-    # extract reach deviation at X percent, or some given distance
-    # extract reaction time (time between GO and leaving HOME)
-    # extract movement time (time between leaving HOME and reaching TARGET)
+    cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
+    cfg['run']['performance']['rotation'].append(trialdata['rotation'])
+    cfg['run']['performance']['errorgain'].append(trialdata['errorgain'])
+    cfg['run']['performance']['feedbacktype'].append(trialdata['cursor'])
 
-    # other stuff:
-    # see if hold was correct? (0/1)
-    # see if time/accuracy criteria were met? (0/1)
+    display_unit = cfg['hw']['display'].units
+    tracker_unit = cfg['hw']['tracker'].units
+
+    data = {}
+    data['step'] = trialdata['step']
+    data['handx_%s'%(tracker_unit)] = trialdata['handx']
+    data['handy_%s'%(tracker_unit)] = trialdata['handy']
+    data['time_s'] = trialdata['time']
+
+
+    # CALCULATE REACH DEVIATION AT FIRST SAMPLE BEYOND 25% HOME-TARGET DISTANCE
+    arr = np.array(tuple(data.values())).T
+    # use steps 0,1,2 (maybe only step 1?)
+    arr = arr[arr[:,0] >= 0]
+    arr = arr[arr[:,0] <= 2]
+    home = trialdata['home']
+    target = trialdata['targetpos']
+    XY = arr[:,np.array([1,2])]
+    XY = XY - np.array(home)
+    distance = np.sqrt(XY[:,0]**2 + XY[:,1]**2)
+    distcrit = 0.25 * math.sqrt((target[0] - home[0])**2 + (target[1] - home[1])**2)
+    q_idx = np.where(distance >= distcrit)[0][0]
+    #print(threshold_idx)
+    xd, yd = XY[q_idx,0], XY[q_idx,1]
+    unrot = -1 * ((trialdata['target']/180)*np.pi)
+    reachdev = (math.atan2((xd * math.sin(unrot)) + (yd * math.cos(unrot)), (xd * math.cos(unrot)) - (yd * math.sin(unrot)))/np.pi)*180
+    cfg['run']['performance']['reachdeviation_deg'].append(reachdev)
+
+    start_s = min(arr[:,3])
+    arr0 = arr[arr[:,0] == 0]
+    reactiontime = max(arr0[:,3]) - start_s
+    cfg['run']['performance']['reactiontime_s'].append(reactiontime)
+    movementtime = max(arr[:,3]) - start_s - reactiontime
+    cfg['run']['performance']['movementtime_s'].append(movementtime)
 
     return(cfg)
 
 def storeJSON(cfg):
+
+    # main keys:
+    # - settings
+    # - experiment
+    # - run
+
+    print(cfg.keys())
+
+    state = {}
+    state_keys = ['name', 'settings', 'experiment', 'run']
+    for k in state_keys:
+        if k in cfg.keys():
+            state[k] = copy.deepcopy(cfg[k])
+
+    filename = '%s/state.json'%(cfg['run']['path'])
+
+    with open( file=filename,
+               mode='w') as fp:
+        json.dump(state, fp, indent=2)
 
     return
