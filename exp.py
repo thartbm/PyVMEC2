@@ -313,7 +313,10 @@ def runTrial(cfg):
     # three kinds of perturbations of visual feedback:
     rotation_deg = trialdict['rotation']
     rotation_rad = (rotation_deg/180)*math.pi
-    errorgain = 1
+    if 'errorgain' in trialdict.keys():
+        errorgain = trialdict['errorgain']
+    else:
+        errorgain = 1
     # distancegain = 1 # NO USE FOR THIS YET: IMPLEMENT LATER
 
     if trialdict['cursor'] == 'clamped':
@@ -388,8 +391,18 @@ def runTrial(cfg):
                                  (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
             relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0])
 
-            cursorPos = [math.cos(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance,
-                         math.sin(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance]
+            cursorPos = [(math.cos(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[0],
+                         (math.sin(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[1]]
+
+        if (errorgain != 1) and (not clamped):
+            relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
+            unrot = -1 * targetangle_rad
+            relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
+                                 (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
+            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * errorgain
+
+            cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
+                         (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
 
 
 
