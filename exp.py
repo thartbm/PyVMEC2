@@ -261,16 +261,53 @@ def runTrialSequence(cfg):
 
         print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['run']['triallist']))
 
-        trialtype = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']]['type'])
+        trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
+        trialtype = copy.deepcopy(trialdict['type'])
 
         print('type:',   trialtype,
-              'cursor:', cfg['run']['triallist'][cfg['run']['trialidx']]['cursor'],
-              'rot:',    cfg['run']['triallist'][cfg['run']['trialidx']]['rotation'],
-              'target:', cfg['run']['triallist'][cfg['run']['trialidx']]['target'])
+              'cursor:', trialdict['cursor'],
+              'rot:',    trialdict['rotation'],
+              'target:', trialdict['target'])
 
         # THIS IS WHERE CODE COULD BE RUN?
         # if ...
         #
+
+        # IFF the pretrialscript key exists in the trial dictionary
+        if ('pretrialscript' in trialdict.keys()):
+            pretrialscript = trialdict['pretrialscript']
+            # AND it is not None (and actually a string: a filename)
+            if (isinstance(pretrialscript, str)):
+
+                # the script should be here:
+                filename = 'experiments/%s/resources/%s.py'%(cfg['run']['experiment'],pretrialscript)
+
+                # we use that filename:
+                with open(filename) as fh:
+                    # to compile whatever is in ther:
+                    code = compile( source = fh.read(),
+                                    filename = filename,
+                                    mode = 'exec' )
+                    # the compile step is not strictly necessary,
+                    # but SO says it gives line numbers in the file if there are errors/crashes
+
+                    # it gets as input the previous performance (not used in my example)
+                    performance = copy.deepcopy(cfg['run']['performance'])
+                    # and the list of UPCOMING trials only
+                    triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                    # which are put in a 'globals' dictionary
+                    g = globals()
+                    g['performance'] = performance
+                    g['triallist']   = triallist
+                    # accompanied by an empty 'locals' dictionary
+                    l = {}
+                    # and it is executed
+                    exec(code, g, l)
+
+                    # the updated triallist should now be in the 'locals' dictionary
+                    # so we copy it to the the running trial list
+                    print(l['triallist'][0])
+                    cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
 
         if trialtype == 'trial':
 
@@ -598,11 +635,12 @@ def storePerformance(cfg, trialdata):
 def storeJSON(cfg):
 
     # main keys:
+    # - name
     # - settings
     # - experiment
     # - run
 
-    print(cfg.keys())
+    #print(cfg.keys())
 
     state = {}
     state_keys = ['name', 'settings', 'experiment', 'run']
