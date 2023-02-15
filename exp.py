@@ -306,7 +306,6 @@ def runTrialSequence(cfg):
 
                     # the updated triallist should now be in the 'locals' dictionary
                     # so we copy it to the the running trial list
-                    print(l['triallist'][0])
                     cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
 
         if trialtype == 'trial':
