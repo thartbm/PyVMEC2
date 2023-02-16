@@ -259,19 +259,8 @@ def runTrialSequence(cfg):
 
     while cfg['run']['trialidx'] < len(cfg['run']['triallist']):
 
-        print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['run']['triallist']))
-
         trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
         trialtype = copy.deepcopy(trialdict['type'])
-
-        print('type:',   trialtype,
-              'cursor:', trialdict['cursor'],
-              'rot:',    trialdict['rotation'],
-              'target:', trialdict['target'])
-
-        # THIS IS WHERE CODE COULD BE RUN?
-        # if ...
-        #
 
         # IFF the pretrialscript key exists in the trial dictionary
         if ('pretrialscript' in trialdict.keys()):
@@ -281,34 +270,45 @@ def runTrialSequence(cfg):
 
                 # the script should be here:
                 filename = 'experiments/%s/resources/%s.py'%(cfg['run']['experiment'],pretrialscript)
+                if (os.path.exists(filename)):
 
-                # we use that filename:
-                with open(filename) as fh:
-                    # to compile whatever is in ther:
-                    code = compile( source = fh.read(),
-                                    filename = filename,
-                                    mode = 'exec' )
-                    # the compile step is not strictly necessary,
-                    # but SO says it gives line numbers in the file if there are errors/crashes
+                    # we use that filename:
+                    with open(filename) as fh:
+                        # to compile whatever is in ther:
+                        code = compile( source = fh.read(),
+                                        filename = filename,
+                                        mode = 'exec' )
+                        # the compile step is not strictly necessary,
+                        # but SO says it gives line numbers in the file if there are errors/crashes
 
-                    # it gets as input the previous performance (not used in my example)
-                    performance = copy.deepcopy(cfg['run']['performance'])
-                    # and the list of UPCOMING trials only
-                    triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
-                    # which are put in a 'globals' dictionary
-                    g = globals()
-                    g['performance'] = performance
-                    g['triallist']   = triallist
-                    # accompanied by an empty 'locals' dictionary
-                    l = {}
-                    # and it is executed
-                    exec(code, g, l)
+                        # it gets as input the previous performance (not used in my example)
+                        performance = copy.deepcopy(cfg['run']['performance'])
+                        # and the list of UPCOMING trials only
+                        triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                        # which are put in a 'globals' dictionary
+                        g = globals()
+                        g['performance'] = performance
+                        g['triallist']   = triallist
+                        # accompanied by an empty 'locals' dictionary
+                        l = {}
+                        # and it is executed
+                        exec(code, g, l)
 
-                    # the updated triallist should now be in the 'locals' dictionary
-                    # so we copy it to the the running trial list
-                    cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+                        # the updated triallist should now be in the 'locals' dictionary
+                        # so we copy it to the the running trial list
+                        cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+
+
+        print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['run']['triallist']))
+        trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
+        trialtype = copy.deepcopy(trialdict['type'])
 
         if trialtype == 'trial':
+
+            print('type:',   trialtype,
+                  'cursor:', trialdict['cursor'],
+                  'rot:',    trialdict['rotation'],
+                  'target:', trialdict['target'])
 
             [cfg, trialdata] = runTrial(cfg=cfg)
 
@@ -319,6 +319,7 @@ def runTrialSequence(cfg):
             cfg = storePerformance(cfg=cfg, trialdata=trialdata)
 
         if trialtype == 'pause':
+
             cfg = runPause(cfg) # NOT WRITTEN YET!
 
         # this has to be at the very end!
