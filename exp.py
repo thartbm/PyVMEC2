@@ -1,6 +1,7 @@
 import PyVMEC2.hw as hw
 import random, json, copy, math, os, sys, shutil
 import numpy as np
+from scipy import optimize
 
 # to make the scripts leaner, we should use numpy and homebrew for saving csvs, but:
 #import pandas as pd
