@@ -86,6 +86,10 @@ For reading out information about monitors, we use the `screeninfo` module (vers
 $ pip3 install screeninfo
 ```
 
+## Scipy
+
+For some advanced options, we use `scipy.optimize` and for now, the version we use is 1.3.3.
+
 # Installing PyVMEC2
 
 Once the required environment and dependencies are set up, you should create a folder for everything to live in, for example: `VisuomotorAdaptation`. Then within this folder, you should _clone_ this repository:
