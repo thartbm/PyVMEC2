@@ -1,7 +1,9 @@
 from PyVMEC2.exp import *
-from psychopy import core, visual, monitors, event
+from psychopy import prefs
+prefs.hardware['audioLib'] = ['PTB', 'sounddevice', 'pyo', 'pygame']
+from psychopy import core, visual, monitors, event, sound
 import numpy as np
-import screeninfo, copy, os
+import screeninfo, copy, os, glob
 from time import time
 
 
@@ -67,7 +69,9 @@ def setupHardware(cfg):
     if cfg['settings']['devices']['tracker']['type'] == "mouse":
         cfg['hw']['tracker'] = mouseTracker(cfg)
 
-
+    # in case there are any 'wav' files in the resources folder
+    # they are added as playable sound objects to the cfg
+    cfg = addSounds(cfg)
 
     return(cfg)
 
@@ -461,3 +465,19 @@ class tabletTracker:
 #       "size_px"    : [1680, 1050],
 #       "size_cm"    : [31.1, 21.6],   # Wacom Intuos Pro Large, specifications from website
 #       "offset_cm"  : [0, 0]
+
+def addSounds(cfg):
+
+    # check if there are "wav" files in the resources folders
+    wav_files = glob.glob('experiments/%s/resources/*.wav'%(cfg['run']['experiment']), recursive=False)
+
+    if len(wav_files):
+        # make a dictionary with named sound objects:
+        cfg['hw']['sounds'] = {}
+        for wav_file in wav_files:
+            file_name = os.path.basename(wav_file)
+            sound_name = os.path.splitext(file_name)[0]
+            cfg['hw']['sounds'][sound_name] = sound.Sound(wav_file)
+    #sound.Sound('short_tick.wav', sampleRate=44100)
+
+    return(cfg)
