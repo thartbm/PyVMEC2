@@ -174,7 +174,7 @@ class monitorDisplay:
         if (isinstance(self.gammafile, str)):
             # probably a filename
             try:
-                self.gg = np.loadtxt(fname='experiments/%s/resources/%s'%(cfg['name'],self.gammafile), # that path is probably not what we want
+                self.gg = np.loadtxt(fname='experiments/%s/resources/hw/%s'%(cfg['name'],self.gammafile), # that path is probably not what we want
                                      delimiter=',')
                 print('loaded gamma-file')
             except:
@@ -469,7 +469,7 @@ class tabletTracker:
 def addSounds(cfg):
 
     # check if there are "wav" files in the resources folders
-    wav_files = glob.glob('experiments/%s/resources/*.wav'%(cfg['run']['experiment']), recursive=False)
+    wav_files = glob.glob('experiments/%s/resources/sounds/*.wav'%(cfg['run']['experiment']), recursive=False)
 
     if len(wav_files):
         # make a dictionary with named sound objects:

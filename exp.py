@@ -1,5 +1,5 @@
 import PyVMEC2.hw as hw
-import random, json, copy, math, os, sys, shutil
+import random, json, copy, math, os, sys, shutil, glob
 import numpy as np
 from scipy import optimize
 
@@ -30,8 +30,11 @@ def setupRun(cfg):
         cfg = seedRNG(cfg)
         cfg = getTrialSequence(cfg)
 
-    # this will have to be done regardless:
+    # these two will have to be done regardless
+    # because they create non-hashable (binary) objects
     cfg = hw.setupHardware(cfg)
+    cfg = loadScripts(cfg)
+
     storeJSON(cfg)
     return(cfg)
 
@@ -270,34 +273,56 @@ def runTrialSequence(cfg):
             if (isinstance(pretrialscript, str)):
 
                 # the script should be here:
-                filename = 'experiments/%s/resources/%s.py'%(cfg['run']['experiment'],pretrialscript)
-                if (os.path.exists(filename)):
+                if pretrialscript in cfg['bin']['scripts'].keys():
 
-                    # we use that filename:
-                    with open(filename) as fh:
-                        # to compile whatever is in ther:
-                        code = compile( source = fh.read(),
-                                        filename = filename,
-                                        mode = 'exec' )
-                        # the compile step is not strictly necessary,
-                        # but SO says it gives line numbers in the file if there are errors/crashes
+                    code = cfg['bin']['scripts'][script_file]
 
-                        # it gets as input the previous performance (not used in my example)
-                        performance = copy.deepcopy(cfg['run']['performance'])
-                        # and the list of UPCOMING trials only
-                        triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
-                        # which are put in a 'globals' dictionary
-                        g = globals()
-                        g['performance'] = performance
-                        g['triallist']   = triallist
-                        # accompanied by an empty 'locals' dictionary
-                        l = {}
-                        # and it is executed
-                        exec(code, g, l)
+                    performance = copy.deepcopy(cfg['run']['performance'])
+                    # and the list of UPCOMING trials only
+                    triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                    # which are put in a 'globals' dictionary
+                    g = globals()
+                    g['performance'] = performance
+                    g['triallist']   = triallist
+                    # accompanied by an empty 'locals' dictionary
+                    l = {}
+                    # and it is executed
+                    exec(code, g, l)
 
-                        # the updated triallist should now be in the 'locals' dictionary
-                        # so we copy it to the the running trial list
-                        cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+                    # the updated triallist should now be in the 'locals' dictionary
+                    # so we copy it to the the running trial list
+                    cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+
+
+
+                # filename = 'experiments/%s/resources/scripts/%s.py'%(cfg['run']['experiment'],pretrialscript)
+                # if (os.path.exists(filename)):
+                #
+                #     # we use that filename:
+                #     with open(filename) as fh:
+                #         # to compile whatever is in ther:
+                #         code = compile( source = fh.read(),
+                #                         filename = filename,
+                #                         mode = 'exec' )
+                #         # the compile step is not strictly necessary,
+                #         # but SO says it gives line numbers in the file if there are errors/crashes
+                #
+                #         # it gets as input the previous performance (not used in my example)
+                #         performance = copy.deepcopy(cfg['run']['performance'])
+                #         # and the list of UPCOMING trials only
+                #         triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                #         # which are put in a 'globals' dictionary
+                #         g = globals()
+                #         g['performance'] = performance
+                #         g['triallist']   = triallist
+                #         # accompanied by an empty 'locals' dictionary
+                #         l = {}
+                #         # and it is executed
+                #         exec(code, g, l)
+                #
+                #         # the updated triallist should now be in the 'locals' dictionary
+                #         # so we copy it to the the running trial list
+                #         cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
 
 
         print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['run']['triallist']))
@@ -656,3 +681,30 @@ def storeJSON(cfg):
         json.dump(state, fp, indent=2)
 
     return
+
+def loadScripts(cfg):
+
+    cfg['bin'] = {}
+    cfg['bin']['scripts'] = {}
+
+    script_files = glob.glob('experiments/%s/resources/scripts/*.py'%(cfg['run']['experiment']), recursive=False)
+
+    if len(script_files):
+
+        for script_file in script_files:
+            # the script should be here:
+            filename = 'experiments/%s/resources/scripts/%s.py'%(cfg['run']['experiment'],script_file)
+            if (os.path.exists(filename)):
+                # we use that filename:
+                with open(filename) as fh:
+                    # to compile whatever is in ther:
+                    code = compile( source = fh.read(),
+                                    filename = filename,
+                                    mode = 'exec' )
+                    cfg['bin']['scripts'][script_file] = code
+                    # the compile step is not strictly necessary,
+                    # but SO says it gives line numbers in the file if there are errors/crashes
+                    # might also run faster?
+
+
+    return( cfg )
