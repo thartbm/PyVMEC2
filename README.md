@@ -72,10 +72,10 @@ $ pip3 install psychopy==2021.2.3 wxwidgets ipython
 
 ## Numpy
 
-The newest versions of numpy use built-in float and int types, but PsychoPy doesn;t, so we need an old numpy:
+The newest versions of numpy use built-in float and int types, but PsychoPy doesn't, so we need an old numpy:
 
 ```
-$ pip3 install numpy=1.22
+$ pip3 install numpy==1.22
 ```
 
 ## Screeninfo
