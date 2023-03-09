@@ -67,15 +67,19 @@ You can then install everything necessary to run PyVMEC2, still from commandline
 $ pip3 install psychopy==2021.2.3 wxwidgets ipython
 ```
 
-(Seems that wxwidgets is version 1.0.5, and ipython is 8.9.0 if that helps.)
+Seems that wxwidgets is version 1.0.5, and ipython is 8.9.0 if that helps. wxWidgets uses the GTK+ 2 libraries, so these should also be installed on the system. Depending on your version of linux, this could look like:
+
+```
+$ sudo apt-get install build-essential libgtk-3-dev
+```
 
 
 ## Numpy
 
-The newest versions of numpy use built-in float and int types, but PsychoPy doesn;t, so we need an old numpy:
+The newest versions of numpy use built-in float and int types, but PsychoPy doesn't, so we need an old numpy:
 
 ```
-$ pip3 install numpy=1.22
+$ pip3 install numpy==1.22
 ```
 
 ## Screeninfo
