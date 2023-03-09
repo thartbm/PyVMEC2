@@ -35,7 +35,7 @@ def setupRun(cfg):
     cfg = hw.setupHardware(cfg)
     cfg = loadScripts(cfg)
 
-    storeJSON(cfg)
+    saveState(cfg)
     return(cfg)
 
 def setupFolder(cfg):
@@ -240,6 +240,8 @@ def seedRNG(cfg):
     # that means some subtasks or properties can be the same for all participants
     # but other things are randomized individually
 
+    # if the RNG states are hashable, they can be stored in the state.json as well
+
     # for this, we return the cfg dict
 
     return(cfg)
@@ -256,10 +258,13 @@ def runTrialSequence(cfg):
     performance['reachdeviation_deg'] = []
     performance['reactiontime_s']     = []
     performance['movementtime_s']     = []
+    performance['scoredpoints']       = []
 
     cfg['run']['performance'] = performance
 
-    storeJSON(cfg)
+    cfg['run']['points'] = 0 # will part of the state later on
+
+    cfg = initializeTrialState(cfg)
 
     while cfg['run']['trialidx'] < len(cfg['run']['triallist']):
 
@@ -275,7 +280,7 @@ def runTrialSequence(cfg):
                 # the script should be here:
                 if pretrialscript in cfg['bin']['scripts'].keys():
 
-                    code = cfg['bin']['scripts'][script_file]
+                    code = cfg['bin']['scripts'][pretrialscript]
 
                     performance = copy.deepcopy(cfg['run']['performance'])
                     # and the list of UPCOMING trials only
@@ -354,7 +359,7 @@ def runTrialSequence(cfg):
         # well... before this:
         # STORE JSON!
 
-        storeJSON(cfg) # should this be called "saveState()" ?
+        saveState(cfg) # should this be called "saveState()" ?
 
     cfg['hw']['display'].shutDown()
 
@@ -372,6 +377,11 @@ def runTrial(cfg):
 
     homePos = [0,0] # this could be changed at some point?
 
+    # we could keep track of the feedback status:
+    # feedbackstatus = {}
+    # for el in trialdict['feedback']:
+    #     feedbackstatus[el['name']] = None
+    # or skip it and only keep track of which feedback to give...
 
     # three kinds of perturbations of visual feedback:
     rotation_deg = trialdict['rotation']
@@ -409,22 +419,24 @@ def runTrial(cfg):
     trialdata['targetpos'] = targetPos
 
     # STEPS:
-    # -3 = get to home position before actual trial starts
-    # -2 = hold - without target (timehold)
-    # -1 = hold - with target (prephold)
-    # 0 = at home, start moving
-    # 1 = left home, moving to target
-    # 2 = arrived at target (wait/hold at target?) (or target-distance)
-    # 3 = at target, home is there: start moving (or target-distance)
-    # 4 = moving back, not there yet
-    # 5 = at home... wait for some short period?
-    # 6 = post-trial period... ? maybe?
+    # -3  =  get to home position before actual trial starts
+    # -2  =  hold - without target (timehold)
+    # -1  =  hold - with target (prephold)
+    #  0  =  at home, start moving
+    #  1  =  left home, moving to target
+    #  2  =  arrived at target or target distance or stopped at minimal distance... (include wait/hold at end point?)
+    #  3  =  at target, home is there: start moving (or target-distance)
+    #  4  =  moving back, not there yet
+    #  5  =  at home... wait for some short period?
+    #  6  =  post-trial period... ? maybe?
+
+
 
     home_target_distance = getDistance(homePos, targetPos)
-    storeJSON(cfg)
 
     inprogress = True
     step = -3
+
     while inprogress:
 
         # visual feedback location depends on real location as well:
@@ -513,6 +525,28 @@ def runTrial(cfg):
                 # for now: nothing else happens but we can have a 5th and 6th step later on
 
 
+        # record trajectory:
+        trialdata['handx'].append(trackerPos[0])
+        trialdata['handy'].append(trackerPos[1])
+        trialdata['time'].append(time_s)
+        trialdata['step'].append(step)
+
+        # distances to check feedback rules:
+        distances = {}
+        distances['home_cursor_distance']  = home_cursor_distance
+        distances['target_cursor_distance'] = target_cursor_distance
+        distances['home_target_distance']   = home_target_distance
+
+        # check feedback rules:
+        # [status, events] = checkFeedbackRules( trialdict = trialdict,
+        #                                        trialdata = trialdata,
+        #                                        distances = distances  )
+
+        # cfg = handleEvents( cfg       = cfg,
+        #                     trialdict = trialdict,
+        #                     trialdata = trialdata )
+
+        # show visual elements
         if (step in [-3, -2, -1, 0, 2, 3, 4]):
             cfg['hw']['display'].showHome(homePos)
 
@@ -523,10 +557,6 @@ def runTrial(cfg):
 
         cfg['hw']['display'].doFrame()
 
-        trialdata['handx'].append(trackerPos[0])
-        trialdata['handy'].append(trackerPos[1])
-        trialdata['time'].append(time_s)
-        trialdata['step'].append(step)
 
     return([cfg, trialdata])
 
@@ -658,7 +688,7 @@ def storePerformance(cfg, trialdata):
 
     return(cfg)
 
-def storeJSON(cfg):
+def saveState(cfg):
 
     # main keys:
     # - name
@@ -708,3 +738,75 @@ def loadScripts(cfg):
 
 
     return( cfg )
+
+def checkFeedbackRules(trialdict, trialdata, distances):
+
+    # trialdict['feedback'] will have the feedback rules
+    # trialdata will have all data necessary to check the rules
+
+    feedbackrules = copy.deepcopy(trialdict['feedbackrules'])
+
+    for fbr in feedbackrules:
+        #satisfied = False ?? not even sure if the rule needs to be applied at all...
+        print(fbr.keys())
+        for cr in fbr['criteria']:
+
+            if cr == 'event':
+                # stuff that just happens
+                print(cr)
+                pass
+
+            if cr == 'speed':
+                pass
+
+            if cr == 'accuracy':
+                pass
+
+
+
+
+    return() # what do we return?
+
+def handleEvents( cfg, trialdict, trialdata ):
+
+
+
+    return(cfg)
+
+def initializeTrialState(cfg):
+
+    cfg['run']['trialstate'] = {}
+
+    # this is done only at the start of the experiment:
+    cfg['run']['trialstate']['persistent'] = {}
+    cfg = resetPersistentTrialState(cfg)
+
+    # this is done before (or after?) each trial:
+    cfg['run']['trialstate']['transient']  = {}
+    cfg = resetTransientTrialState(cfg)
+
+    return(cfg)
+
+def resetPersistentTrialState(cfg):
+
+    # actually: this should come from the config json:
+    cfg['run']['trialstate']['persistent']['points'] = 0
+
+    # no other ones here yet...
+
+    return(cfg)
+
+def resetTransientTrialState(cfg):
+
+    cfg['run']['trialstate']['transient']['showCursor'] = True
+    cfg['run']['trialstate']['transient']['showHome'] = True
+    cfg['run']['trialstate']['transient']['showTarget'] = False
+    cfg['run']['trialstate']['transient']['showImprint'] = False
+    # cfg['run']['trialstate']['transient']['showHand'] = False
+    cfg['run']['trialstate']['transient']['homeStartHoldFinished'] = 0
+    cfg['run']['trialstate']['transient']['homeFinishHoldFinished'] = 0
+    cfg['run']['trialstate']['transient']['targetHoldFinished'] = 0
+
+    # what else?
+
+    return(cfg)

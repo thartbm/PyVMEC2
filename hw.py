@@ -295,6 +295,14 @@ class monitorDisplay:
                                      radius = self.cursor_radius,
                                      pos = self.off_pos)
 
+        self.cursor_imprint = visual.Circle( win = self.win,
+                                             edges = stimuli['cursor_imprint']['edges'],
+                                             lineWidth = stimuli['cursor_imprint']['lineWidth'],
+                                             lineColor = stimuli['cursor_imprint']['lineColor'],
+                                             fillColor = stimuli['cursor_imprint']['fillColor'],
+                                             radius = self.cursor_radius,
+                                             pos = self.off_pos)
+
         # ADD TEXT STIMULI
         # - trial counter
         # - instructions
@@ -341,6 +349,10 @@ class monitorDisplay:
         self.cursor.pos = cursorPos
         self.cursor.draw()
 
+    def showCursorImprint(self, cursorImprintPos):
+        self.cursor_imprint.pos = cursorImprintPos
+        self.cursor_imrpint.draw()
+
     def doFrame(self):
         # show stimuli:
         self.win.flip()
@@ -349,6 +361,7 @@ class monitorDisplay:
         self.home.pos = self.off_pos
         self.target.pos = self.off_pos
         self.cursor.pos = self.off_pos
+        self.cursor_imprint.pos = self.off_pos
 
     def shutDown(self):
 
@@ -366,7 +379,6 @@ class monitorDisplay:
         # - for showing videos (even more detailed instructions)
 
         # we could also add audio objects
-        # - for indicating success / failure
         # - as a start signal, or other timing information
 
 
