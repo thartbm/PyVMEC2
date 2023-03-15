@@ -394,7 +394,7 @@ class monitorDisplay:
 
     def showCursorImprint(self, cursorImprintPos):
         self.cursor_imprint.pos = cursorImprintPos
-        self.cursor_imrpint.draw()
+        self.cursor_imprint.draw()
 
     def showPointsCounter(self, points, pos=None):
         txt = '%d'%points

@@ -2,6 +2,7 @@ import PyVMEC2.hw as hw
 import random, json, copy, math, os, sys, shutil, glob
 import numpy as np
 from scipy import optimize
+from time import time
 
 # to make the scripts leaner, we should use numpy and homebrew for saving csvs, but:
 #import pandas as pd
@@ -511,6 +512,12 @@ def runTrial(cfg):
             cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
                          (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
 
+        
+        # recalculate distances with updated positions:
+        home_cursor_distance = getDistance(homePos, cursorPos)
+        target_cursor_distance = getDistance(targetPos, cursorPos)
+
+
         # STEPS NEED TO BE TAKEN:
         if cfg['run']['trialstate']['transient']['step'] < 0:
             # PERIOD BEFORE CURSOR IS AT HOME
@@ -565,25 +572,28 @@ def runTrial(cfg):
         distances['target_cursor_distance'] = target_cursor_distance
         distances['home_target_distance']   = home_target_distance
 
+        # positions to implement certain feedback:
+        positions = {}
+        positions['home_pos'] = homePos
+        positions['cursor_pos'] = cursorPos
+        positions['target_pos'] = targetPos
+
         # check feedback rules:
-        trialdict['events'] += checkFeedbackRules( cfg        = cfg,
-                                                   trialdict  = trialdict,
-                                                   trialdata  = trialdata,
-                                                   distances  = distances  )
+        trialdict = checkFeedbackRules( cfg        = cfg,
+                                        trialdict  = trialdict,
+                                        trialdata  = trialdata,
+                                        distances  = distances,
+                                        positions  = positions  )
 
         # see if anything needs to happen right now:
         [cfg, trialdict] = handleEvents( cfg            = cfg,
                                          trialdict      = trialdict,
                                          trialdata      = trialdata )  # not using trialdata so far...
 
-        # # show visual elements
-        # if (cfg['run']['trialstate']['transient']['step'] in [-3, -2, -1, 0, 2, 3, 4]):
-        #     cfg['hw']['display'].showHome(homePos)
-
-        # if (cfg['run']['trialstate']['transient']['step'] in [0, 1, 2]):
-        #     cfg['hw']['display'].showTarget(targetPos)
-
-        print(cfg['run']['trialstate']['transient']['showHome'])
+        # show visual elements
+        # THIS SHOULD BE OUTSOURCED to a function:
+        if (cfg['run']['trialstate']['transient']['showImprintCursor']):
+            cfg['hw']['display'].showCursorImprint(cfg['run']['trialstate']['transient']['imprintCursorPos'])
         if (cfg['run']['trialstate']['transient']['showHome']):
             cfg['hw']['display'].showHome(homePos)
         if cfg['run']['trialstate']['transient']['showTarget']:
@@ -809,7 +819,9 @@ def resetTransientTrialState(cfg):
     cfg['run']['trialstate']['transient']['showHome']               = False
     cfg['run']['trialstate']['transient']['showTarget']             = False
     cfg['run']['trialstate']['transient']['showImprintCursor']      = False
+    cfg['run']['trialstate']['transient']['imprintCursorPos']       = (0,0)
     cfg['run']['trialstate']['transient']['showImprintTarget']      = False
+    cfg['run']['trialstate']['transient']['imprintTargetPos']       = (0,0)
     cfg['run']['trialstate']['transient']['showTargetArc']          = False
     cfg['run']['trialstate']['transient']['showCursorArc']          = False
     # cfg['run']['trialstate']['transient']['showHand']               = False
@@ -833,43 +845,6 @@ def resetTransientTrialState(cfg):
 
     return(cfg)
 
-
-def checkFeedbackRules(cfg, trialdict, trialdata, distances):
-
-    new_events = []
-
-    # trialdict['feedback'] will have the feedback rules
-    # trialdata will have all data necessary to check the rules
-
-    feedbackrules = copy.deepcopy(trialdict['feedbackrules'])
-
-    for fbr in feedbackrules:
-        #satisfied = False ?? not even sure if the rule needs to be applied at all...
-        # print(fbr.keys())
-        rule_passed = True # set to False on a single failed criterion
-        for cr in fbr['criteria']:   # loop through list of criteria, each is a dict
-            
-            crit_type = list(cr.keys())[0]
-
-            if crit_type == 'event':
-                # stuff that just happens
-                print( cr )
-                print( cfg['hw']['display'].target_radius )
-                if cr['event']['type'] == 'location':
-                    if cr['event']['at'] == 'target':
-                        # check if people are at the target:
-                        pass
-
-                pass
-
-            if crit_type == 'speed':
-                pass
-
-            if crit_type == 'accuracy':
-                pass
-
-    return(new_events)
-
 def handleEvents( cfg, trialdict, trialdata):
 
     events = trialdict["events"]
@@ -884,7 +859,10 @@ def handleEvents( cfg, trialdict, trialdata):
         if event['trigger']['type'] == 'transient-state-change':
             do_event = checkTransientStateChangeTrigger(cfg=cfg, trigger=event['trigger'])
         if event['trigger']['type'] == 'time':
-            do_event = checkTimeTrigger(trigger = trigger)
+            do_event = checkTimeTrigger(trigger = event['trigger'])
+            # if do_event:
+            #     print(event)
+            #     print(cfg['run']['trialstate']['transient']['imprintCursorPos'])
 
         if do_event:
             # implement the effect
@@ -892,7 +870,9 @@ def handleEvents( cfg, trialdict, trialdata):
             # remove the event, since we only have to do it once!
             remove_events += [event_idx]
 
+    remove_events.sort(reverse=True)
     for del_event in remove_events:
+        # print({'del_event':del_event, 'len_events':len(trialdict["events"])})
         del trialdict["events"][del_event]
 
     return(cfg, trialdict)
@@ -926,5 +906,73 @@ def implementEventEffect(event, cfg, trialdict):
             new_event['value']           = time() + effect['delay']
             new_event['effect']['delay'] = 0
             trialdict['events'] += [new_event]
+
+    return(trialdict)
+
+def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
+
+    new_events = []
+
+    # trialdict['feedback'] will have the feedback rules
+    # trialdata will have all data necessary to check the rules
+
+    feedbackrules = copy.deepcopy(trialdict['feedbackrules'])
+
+    remove_feedbackrules = []
+
+    for fbr_idx in range(len(feedbackrules)):
+
+        fbr = feedbackrules[fbr_idx]
+        #satisfied = False ?? not even sure if the rule needs to be applied at all...
+        
+        rule_passed = True # set to False on a single failed criterion
+
+        for cr in fbr['criteria']:   # loop through list of criteria, each is a dict
+            
+            crit_type = list(cr.keys())[0]
+
+            if crit_type == 'event':
+                # stuff that just happens
+                if cr['event']['type'] == 'transient-state-change':
+                    if cfg['run']['trialstate']['transient'][cr['event']['property']] != cr['event']['value']:
+                        rule_passed = False
+
+            if crit_type == 'speed':
+                rule_passed = False
+                pass
+
+            if crit_type == 'accuracy':
+                rule_passed = False
+                pass
+        
+        if rule_passed:
+            remove_feedbackrules += [fbr_idx]
+            for fb in fbr['feedback']:
+                fb_type = list(fb.keys())[0]
+
+                if fb_type == 'imprint':
+                    now    = time()
+                    onset  = now + fb['imprint']['at']['duration'][0]
+                    offset = now + fb['imprint']['at']['duration'][1]
+                    # technically, the below thing is only for cursors... will make more flexible later:
+
+                    cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
+                    print(cfg['run']['trialstate']['transient']['imprintCursorPos'])
+                    new_events += [ {'trigger' : {'type'      : 'time',
+                                                  'value'     :  onset},
+                                     'effect' : { 'type'       : 'transient-state',
+                                                  'delay'      : 0,
+                                                  'parameters' : { 'showImprintCursor' : True}}},
+                                    {'trigger' : {'type'      : 'time',
+                                                  'value'     :  offset},
+                                     'effect' : { 'type'       : 'transient-state',
+                                                  'delay'      : 0,
+                                                  'parameters' : { 'showImprintCursor' : False}}} ]             
+
+    trialdict['events'] += new_events
+
+    remove_feedbackrules.sort(reverse=True)
+    for del_fbr in remove_feedbackrules:
+        del trialdict['feedbackrules'][del_fbr]
 
     return(trialdict)
