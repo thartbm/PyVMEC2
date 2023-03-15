@@ -130,7 +130,7 @@ class monitorDisplay:
         else:
             # pick the first monitor? maybe not a good default...
             self.si = screeninfo.get_monitors()[0]
-
+        print(self.si)
         # pixel size is necessary, it should be in screeninfo:
         self.fullscreen = None # use system default?
         if 'size_px' in display.keys():
@@ -146,7 +146,6 @@ class monitorDisplay:
         else:
             self.size_px = [self.si.width, self.si.height]
             self.fullscreen = True
-
         # physical size is nice, but normalized units are acceptable
         if 'size_cm' in display.keys():
             self.size_cm = display['size_cm']
@@ -157,7 +156,6 @@ class monitorDisplay:
                 self.size_cm = [self.si.width_mm/10., self.si.height_mm/10.]
         if (self.size_cm == None):
             self.units = 'norm'
-
 
         # we'd need this to create the window as well:
         self.pos = [self.si.x, self.si.y]
@@ -235,13 +233,16 @@ class monitorDisplay:
         self.monitor = mymonitor
 
         # now set the window object using this monitor:
-        self.win = visual.Window( size = self.size_px,
+        self.win = visual.Window( screen = self.screen_idx,
+                                  size = self.size_px,
                                   pos = self.pos,
                                   winType = 'pyglet',
                                   color = [-1,-1,-1],
                                   monitor = self.monitor,
                                   units = self.units,
-                                  fullscr = self.fullscreen)
+                                  fullscr = self.fullscreen,
+                                  viewScale = self.viewscale
+                                )
 
         stimuli = copy.deepcopy(cfg['settings']['stimuli'])
 
