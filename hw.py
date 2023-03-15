@@ -235,13 +235,15 @@ class monitorDisplay:
         self.monitor = mymonitor
 
         # now set the window object using this monitor:
-        self.win = visual.Window( size = self.size_px,
+        self.win = visual.Window( screen = self.screen_idx,
+                                  size = self.size_px,
                                   pos = self.pos,
                                   winType = 'pyglet',
                                   color = [-1,-1,-1],
                                   monitor = self.monitor,
                                   units = self.units,
-                                  fullscr = self.fullscreen)
+                                  fullscr = self.fullscreen,
+                                  viewScale = self.viewscale)
 
         stimuli = copy.deepcopy(cfg['settings']['stimuli'])
 
@@ -395,6 +397,10 @@ class monitorDisplay:
     def showCursorImprint(self, cursorImprintPos):
         self.cursor_imprint.pos = cursorImprintPos
         self.cursor_imprint.draw()
+
+    def showTargetImprint(self, targetImprintPos):
+        self.target_imprint.pos = targetImprintPos
+        self.target_imprint.draw()
 
     def showPointsCounter(self, points, pos=None):
         txt = '%d'%points

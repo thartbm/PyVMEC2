@@ -592,6 +592,8 @@ def runTrial(cfg):
 
         # show visual elements
         # THIS SHOULD BE OUTSOURCED to a function:
+        if (cfg['run']['trialstate']['transient']['showImprintTarget']):
+            cfg['hw']['display'].showTargetImprint(cfg['run']['trialstate']['transient']['imprintTargetPos'])
         if (cfg['run']['trialstate']['transient']['showImprintCursor']):
             cfg['hw']['display'].showCursorImprint(cfg['run']['trialstate']['transient']['imprintCursorPos'])
         if (cfg['run']['trialstate']['transient']['showHome']):
@@ -951,24 +953,38 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
                 fb_type = list(fb.keys())[0]
 
                 if fb_type == 'imprint':
+                    print(fb)
                     now    = time()
                     onset  = now + fb['imprint']['at']['duration'][0]
                     offset = now + fb['imprint']['at']['duration'][1]
                     # technically, the below thing is only for cursors... will make more flexible later:
 
-                    cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
-                    print(cfg['run']['trialstate']['transient']['imprintCursorPos'])
-                    new_events += [ {'trigger' : {'type'      : 'time',
-                                                  'value'     :  onset},
-                                     'effect' : { 'type'       : 'transient-state',
-                                                  'delay'      : 0,
-                                                  'parameters' : { 'showImprintCursor' : True}}},
-                                    {'trigger' : {'type'      : 'time',
-                                                  'value'     :  offset},
-                                     'effect' : { 'type'       : 'transient-state',
-                                                  'delay'      : 0,
-                                                  'parameters' : { 'showImprintCursor' : False}}} ]             
-
+                    if fb['imprint']['type'] == 'cursor':
+                        cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
+                        new_events += [ {'trigger' : {'type'      : 'time',
+                                                    'value'     :  onset},
+                                        'effect' : { 'type'       : 'transient-state',
+                                                    'delay'      : 0,
+                                                    'parameters' : {'showImprintCursor' : True}}},
+                                        {'trigger' : {'type'      : 'time',
+                                                    'value'     :  offset},
+                                        'effect' : { 'type'       : 'transient-state',
+                                                    'delay'      : 0,
+                                                    'parameters' : {'showImprintCursor' : False}}} ]             
+                    if fb['imprint']['type'] == 'target':
+                        cfg['run']['trialstate']['transient']['imprintTargetPos'] = positions['target_pos']
+                        cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
+                        new_events += [ {'trigger' : {'type'      : 'time',
+                                                    'value'     :  onset},
+                                        'effect' : { 'type'       : 'transient-state',
+                                                    'delay'      : 0,
+                                                    'parameters' : {'showImprintTarget' : True}}},
+                                        {'trigger' : {'type'      : 'time',
+                                                    'value'     :  offset},
+                                        'effect' : { 'type'       : 'transient-state',
+                                                    'delay'      : 0,
+                                                    'parameters' : {'showImprintTarget' : False}}} ]             
+   
     trialdict['events'] += new_events
 
     remove_feedbackrules.sort(reverse=True)
