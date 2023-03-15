@@ -399,6 +399,7 @@ def runTrial(cfg):
 
     # set step to -3, scoredpoints to 0, and all stimuli to not be shown
     cfg = resetTransientTrialState(cfg)
+    cfg['run']['trialstate']['transient']['trialstarttime'] = time()
 
     targetPos = getTargetPos(cfg)
     #print(targetPos)
@@ -518,28 +519,49 @@ def runTrial(cfg):
         target_cursor_distance = getDistance(targetPos, cursorPos)
 
 
+
+
+    # cfg['run']['trialstate']['transient']['trialstarttime']         =  0
+    # cfg['run']['trialstate']['transient']['gotime']                 =  0
+    # cfg['run']['trialstate']['transient']['reactiontime']           =  0
+    # cfg['run']['trialstate']['transient']['movementtime']           =  0
+    # cfg['run']['trialstate']['transient']['completiontime']         =  0
+
+
+
+
         # STEPS NEED TO BE TAKEN:
         if cfg['run']['trialstate']['transient']['step'] < 0:
             # PERIOD BEFORE CURSOR IS AT HOME
             # SPLIT FOR HOLD PERIODS... right now: only the go to home part
             if (home_cursor_distance <= home_radius):
                 cfg['run']['trialstate']['transient']['step'] = 0
+                cfg['run']['trialstate']['transient']['gotime'] = time_s
 
         if cfg['run']['trialstate']['transient']['step'] == 0:
             # AT HOME WITH TARGET PRESENTED... WAITING FOR REACTION
             if (home_cursor_distance > home_radius):
                 # print('entering step 1')
+
                 cfg['run']['trialstate']['transient']['step'] = 1
+                cfg['run']['trialstate']['transient']['reactiontime'] = time_s - cfg['run']['trialstate']['transient']['gotime']
 
         if cfg['run']['trialstate']['transient']['step'] == 1:
             # IF criterion is DISTANCE:
             if trialdict['reachcompletioncriterion']['type'] == 'homecursordistance':
                 if home_cursor_distance > (trialdict['reachcompletioncriterion']['hometargetdistance_prop'] * home_target_distance):
                     cfg['run']['trialstate']['transient']['step'] = 2
-
+            # IF criterion is ACQUIRE:
             if trialdict['reachcompletioncriterion']['type'] == 'acquire':
                 if target_cursor_distance < (trialdict['reachcompletioncriterion']['targetradius_prop'] * target_radius):
                     cfg['run']['trialstate']['transient']['step'] = 2
+            
+            # update times in transient trial state upon reach completion:
+            if cfg['run']['trialstate']['transient']['step'] == 2:
+                cfg['run']['trialstate']['transient']['movementtime'] = time_s - cfg['run']['trialstate']['transient']['gotime'] - cfg['run']['trialstate']['transient']['reactiontime']
+                cfg['run']['trialstate']['transient']['completiontime'] = cfg['run']['trialstate']['transient']['reactiontime'] + cfg['run']['trialstate']['transient']['movementtime']
+
+
 
         if cfg['run']['trialstate']['transient']['step'] == 2:
             if (home_cursor_distance < (home_target_distance - target_radius)):
@@ -909,6 +931,9 @@ def implementEventEffect(event, cfg, trialdict):
             new_event['effect']['delay'] = 0
             trialdict['events'] += [new_event]
 
+    if effect['type'] == 'sound':
+        cfg['hw']['sounds'][effect['file']].play()
+
     return(trialdict)
 
 def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
@@ -927,64 +952,93 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
         fbr = feedbackrules[fbr_idx]
         #satisfied = False ?? not even sure if the rule needs to be applied at all...
         
-        rule_passed = True # set to False on a single failed criterion
+        # do we test the rule?
+        if testEvent(event = fbr['event'],
+                     cfg = cfg,
+                     trialdict = trialdict,
+                     trialdata = trialdata,
+                     distances = distances,
+                     positions = positions):
+            rule_passed = True # will fail on missing any single specified criterion
+        else:
+            continue # check next rule
+
+        # whether or not the tests are passed: the rule is removed
+        remove_feedbackrules += [fbr_idx]
 
         for cr in fbr['criteria']:   # loop through list of criteria, each is a dict
             
             crit_type = list(cr.keys())[0]
 
-            if crit_type == 'event':
-                # stuff that just happens
-                if cr['event']['type'] == 'transient-state-change':
-                    if cfg['run']['trialstate']['transient'][cr['event']['property']] != cr['event']['value']:
-                        rule_passed = False
-
             if crit_type == 'speed':
-                rule_passed = False
-                pass
+                if testSpeed(test = cr['speed'],
+                             cfg = cfg):
+                    print('rule passed')
+                    pass
+                else:
+                    print('rule failed')
+                    rule_passed = False
 
             if crit_type == 'accuracy':
-                rule_passed = False
-                pass
+                if testAccuracy(test = cr['accuracy'],
+                                positions = positions,
+                                distances = distances):
+                    print('rule passed')
+                    pass
+                else:
+                    print('rule failed')
+                    rule_passed = False
         
-        if rule_passed:
-            remove_feedbackrules += [fbr_idx]
-            for fb in fbr['feedback']:
-                fb_type = list(fb.keys())[0]
+        for fb in fbr['feedback']:
+            fb_type = list(fb.keys())[0]
 
-                if fb_type == 'imprint':
-                    print(fb)
-                    now    = time()
-                    onset  = now + fb['imprint']['at']['duration'][0]
-                    offset = now + fb['imprint']['at']['duration'][1]
-                    # technically, the below thing is only for cursors... will make more flexible later:
+            if rule_passed:
+                value = fb[fb_type]['value'][0]
+            else:
+                value = fb[fb_type]['value'][1]
 
-                    if fb['imprint']['type'] == 'cursor':
-                        cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
-                        new_events += [ {'trigger' : {'type'      : 'time',
-                                                    'value'     :  onset},
-                                        'effect' : { 'type'       : 'transient-state',
-                                                    'delay'      : 0,
-                                                    'parameters' : {'showImprintCursor' : True}}},
-                                        {'trigger' : {'type'      : 'time',
-                                                    'value'     :  offset},
-                                        'effect' : { 'type'       : 'transient-state',
-                                                    'delay'      : 0,
-                                                    'parameters' : {'showImprintCursor' : False}}} ]             
-                    if fb['imprint']['type'] == 'target':
-                        cfg['run']['trialstate']['transient']['imprintTargetPos'] = positions['target_pos']
-                        cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
-                        new_events += [ {'trigger' : {'type'      : 'time',
-                                                    'value'     :  onset},
-                                        'effect' : { 'type'       : 'transient-state',
-                                                    'delay'      : 0,
-                                                    'parameters' : {'showImprintTarget' : True}}},
-                                        {'trigger' : {'type'      : 'time',
-                                                    'value'     :  offset},
-                                        'effect' : { 'type'       : 'transient-state',
-                                                    'delay'      : 0,
-                                                    'parameters' : {'showImprintTarget' : False}}} ]             
-   
+            if fb_type == 'imprint':
+                now    = time()
+                onset  = now + fb['imprint']['event']['duration'][0]
+                offset = now + fb['imprint']['event']['duration'][1]
+                # technically, the below thing is only for cursors... will make more flexible later:
+
+                if value == 'cursor':
+                    cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
+                    new_events += [ {'trigger' : {'type'      : 'time',
+                                                'value'     :  onset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintCursor' : True}}},
+                                    {'trigger' : {'type'      : 'time',
+                                                'value'     :  offset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintCursor' : False}}} ]             
+                if value == 'target':
+                    cfg['run']['trialstate']['transient']['imprintTargetPos'] = positions['target_pos']
+                    cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
+                    new_events += [ {'trigger' : {'type'      : 'time',
+                                                'value'     :  onset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintTarget' : True}}},
+                                    {'trigger' : {'type'      : 'time',
+                                                'value'     :  offset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintTarget' : False}}} ] 
+                    
+            if fb_type == 'sound':
+                
+                if fb[fb_type]['event']['type'] == 'time':
+                    onset = time() + fb[fb_type]['event']['delay']
+                    
+                    new_events += [ {'trigger' : {'type' : 'time', 'value': onset},
+                                     'effect'  : {'type' : 'sound', 'file' : value}} ]
+                print(new_events[-1])
+
+                
     trialdict['events'] += new_events
 
     remove_feedbackrules.sort(reverse=True)
@@ -992,3 +1046,36 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
         del trialdict['feedbackrules'][del_fbr]
 
     return(trialdict)
+
+def testEvent(event, cfg, trialdict, trialdata, distances, positions):
+
+    if event['type'] == 'transient-state-change':
+        if cfg['run']['trialstate']['transient'][event['property']] != event['value']:
+            return(False)
+        else:
+            return(True)
+
+    print('event rule untested, considered failed')
+    return(False)
+
+def testSpeed(test, cfg):
+
+    if test['testvariable'] in ['reactiontime', 'movementtime', 'completiontime']:
+        value = cfg['run']['trialstate']['transient'][test['testvariable']]
+    
+    if value >= test['testrange'][0] and value <= test['testrange'][1]:
+        #print('speed test passed')
+        return(True)
+    #print('speed test failed')
+
+    return(False)
+
+def testAccuracy(test, positions, distances):
+
+    if test['testvariable'] in ['home_cursor_distance', 'target_cursor_distance', 'home_target_distance']:
+        value = distances[test['testvariable']]
+
+    if value >= test['testrange'][0] and value <= test['testrange'][1]:
+        return(True)
+
+    return(False)
