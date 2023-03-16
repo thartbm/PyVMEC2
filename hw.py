@@ -350,10 +350,15 @@ class monitorDisplay:
             self.trialcounter_pos = [ 1 * cfg['settings']['basictrial']['targetdistance_norm'], 1 * cfg['settings']['basictrial']['targetdistance_norm']]
             self.trialcounter_height = 0.05 * min(self.size_norm)
 
+        flipHoriz = cfg['settings']['devices']['display']['text_flips'][0]
+        flipVert  = cfg['settings']['devices']['display']['text_flips'][1]
+
         self.trialcounter = visual.TextStim( win = self.win,
                                              text = '0/0',
                                              pos = self.trialcounter_pos,
-                                             height = self.trialcounter_height)
+                                             height = self.trialcounter_height,
+                                             flipHoriz = flipHoriz,
+                                             flipVert = flipVert)
 
         # points counter:
         if (self.units == 'cm'):
@@ -367,7 +372,9 @@ class monitorDisplay:
         self.pointscounter = visual.TextStim( win = self.win,
                                               text = '0/0',
                                               pos = self.pointscounter_pos,
-                                              height = self.pointscounter_height)
+                                              height = self.pointscounter_height,
+                                              flipHoriz = flipHoriz,
+                                              flipVert = flipVert)
 
         # instructions will be in the middle of the screen:
         self.instructions_pos = [0, 0]
@@ -380,7 +387,9 @@ class monitorDisplay:
         self.instructions = visual.TextStim( win = self.win,
                                              text = '[no instructions]',
                                              pos = self.instructions_pos,
-                                             height = self.instructions_height)
+                                             height = self.instructions_height,
+                                             flipHoriz = flipHoriz,
+                                             flipVert = flipVert)
 
     def showHome(self, homePos):
         self.home.pos = homePos

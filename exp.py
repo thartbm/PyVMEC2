@@ -373,10 +373,10 @@ def runTrialSequence(cfg):
         # this has to be at the very end!
         cfg['run']['trialidx'] +=1
 
-        # well... before this:
-        # STORE JSON!
-
+        # well... before this anyway:
         saveState(cfg) # should this be called "saveState()" ?
+    
+    savePerformance(cfg) # shorthand data... might be sufficient for some analyses
 
     cfg['hw']['display'].shutDown()
 
@@ -387,22 +387,12 @@ def runTrial(cfg):
 
     trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
 
-
-
-
-    # # show visual elements
-    # if (cfg['run']['trialstate']['transient']['step'] in [-3, -2, -1, 0, 2, 3, 4]):
-    #     cfg['hw']['display'].showHome(homePos)
-    # if (cfg['run']['trialstate']['transient']['step'] in [0, 1, 2]):
-    #     cfg['hw']['display'].showTarget(targetPos)
-
-
     # set step to -3, scoredpoints to 0, and all stimuli to not be shown
     cfg = resetTransientTrialState(cfg)
+    # record trial start time:
     cfg['run']['trialstate']['transient']['trialstarttime'] = time()
 
     targetPos = getTargetPos(cfg)
-    #print(targetPos)
     targetangle_deg = trialdict['target']
     targetangle_rad = (targetangle_deg/180) * math.pi
 
@@ -517,18 +507,6 @@ def runTrial(cfg):
         # recalculate distances with updated positions:
         home_cursor_distance = getDistance(homePos, cursorPos)
         target_cursor_distance = getDistance(targetPos, cursorPos)
-
-
-
-
-    # cfg['run']['trialstate']['transient']['trialstarttime']         =  0
-    # cfg['run']['trialstate']['transient']['gotime']                 =  0
-    # cfg['run']['trialstate']['transient']['reactiontime']           =  0
-    # cfg['run']['trialstate']['transient']['movementtime']           =  0
-    # cfg['run']['trialstate']['transient']['completiontime']         =  0
-
-
-
 
         # STEPS NEED TO BE TAKEN:
         if cfg['run']['trialstate']['transient']['step'] < 0:
@@ -761,7 +739,24 @@ def storePerformance(cfg, trialdata):
     movementtime = max(arr[:,3]) - start_s - reactiontime
     cfg['run']['performance']['movementtime_s'].append(movementtime)
 
+    cfg['run']['performance']['scoredpoints'].append(trialdata['scoredpoints'])
+
     return(cfg)
+
+def savePerformance(cfg):
+
+    performance = cfg['run']['performance']
+
+    performance_array = np.array(tuple(performance.values())).T
+
+    filename = '%sperformance.csv'%(cfg['run']['path'])
+
+    header = ','.join(performance.keys())
+
+    np.savetxt(filename, performance_array, delimiter=',', header=header, fmt='%s', comments="")
+
+    return
+
 
 def saveState(cfg):
 
@@ -771,13 +766,27 @@ def saveState(cfg):
     # - experiment
     # - run
 
+    # EXCEPT:
+    # - run['triallist']
+
     #print(cfg.keys())
 
     state = {}
     state_keys = ['name', 'settings', 'experiment', 'run']
+    # we exclude 'hw' (monitor object) and 'bin' (sounds, compiled scripts) 
     for k in state_keys:
         if k in cfg.keys():
-            state[k] = copy.deepcopy(cfg[k])
+            if k == 'run':
+                # exclude 'triallist' from run
+                runkeys = list(cfg['run'].keys())
+                runkeys.remove('triallist')
+                run = {}
+                for runkey in runkeys:
+                    run[runkey] = copy.deepcopy(cfg['run'][runkey])
+                state[k] = run
+            else:
+                # all other parts we keep
+                state[k] = copy.deepcopy(cfg[k])
 
     filename = '%s/state.json'%(cfg['run']['path'])
 
@@ -973,20 +982,20 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
             if crit_type == 'speed':
                 if testSpeed(test = cr['speed'],
                              cfg = cfg):
-                    print('rule passed')
+                    #print('rule passed')
                     pass
                 else:
-                    print('rule failed')
+                    #print('rule failed')
                     rule_passed = False
 
             if crit_type == 'accuracy':
                 if testAccuracy(test = cr['accuracy'],
                                 positions = positions,
                                 distances = distances):
-                    print('rule passed')
+                    #print('rule passed')
                     pass
                 else:
-                    print('rule failed')
+                    #print('rule failed')
                     rule_passed = False
         
         for fb in fbr['feedback']:
@@ -1036,7 +1045,7 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
                     
                     new_events += [ {'trigger' : {'type' : 'time', 'value': onset},
                                      'effect'  : {'type' : 'sound', 'file' : value}} ]
-                print(new_events[-1])
+                #print(new_events[-1])
 
                 
     trialdict['events'] += new_events
