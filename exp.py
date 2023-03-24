@@ -376,7 +376,7 @@ def runTrialSequence(cfg):
         # well... before this anyway:
         saveState(cfg) # should this be called "saveState()" ?
     
-    savePerformance(cfg) # shorthand data... might be sufficient for some analyses
+    savePerformance(cfg) # shorthand data... might be sufficient for some analyses?
 
     cfg['hw']['display'].shutDown()
 
@@ -604,9 +604,9 @@ def runTrial(cfg):
             cfg['hw']['display'].showCursor(cursorPos)
 
 
-        instr = 'step: %d'%cfg['run']['trialstate']['transient']['step']
-        cfg['hw']['display'].showInstructions(txt = instr,
-                                              pos = (-8,-4) )
+        # instr = 'step: %d'%cfg['run']['trialstate']['transient']['step']
+        # cfg['hw']['display'].showInstructions(txt = instr,
+        #                                       pos = (-8,-4) )
 
         cfg['hw']['display'].doFrame()
 
