@@ -803,22 +803,26 @@ def loadScripts(cfg):
 
     script_files = glob.glob('experiments/%s/resources/scripts/*.py'%(cfg['run']['experiment']), recursive=False)
 
+    print(script_files)
+
     if len(script_files):
 
-        for script_file in script_files:
-            # the script should be here:
-            filename = 'experiments/%s/resources/scripts/%s.py'%(cfg['run']['experiment'],script_file)
-            if (os.path.exists(filename)):
+        for script_path in script_files:
+            if (os.path.exists(script_path)):
+                file_name = os.path.basename(script_path)
+                script_name = os.path.splitext(file_name)[0]
                 # we use that filename:
-                with open(filename) as fh:
+                with open(script_path) as fh:
                     # to compile whatever is in ther:
                     code = compile( source = fh.read(),
-                                    filename = filename,
+                                    filename = script_path,
                                     mode = 'exec' )
-                    cfg['bin']['scripts'][script_file] = code
+                    cfg['bin']['scripts'][script_name] = code
                     # the compile step is not strictly necessary,
                     # but SO says it gives line numbers in the file if there are errors/crashes
                     # might also run faster?
+
+    print(cfg['bin']['scripts'].keys())
 
 
     return( cfg )
