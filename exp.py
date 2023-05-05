@@ -414,12 +414,14 @@ def runTrial(cfg):
     if 'cursorerrorgain' in trialdict.keys():
         cursorerrorgain = trialdict['cursorerrorgain']
     else:
+        trialdict['cursorerrorgain'] = 1
         cursorerrorgain = 1
     
     # 2: error gains:
     if 'errorgain' in trialdict.keys():
         errorgain = trialdict['errorgain']
     else:
+        trialdict['errorgain'] = 1
         errorgain = 1
     
     # 3: distance gains:
