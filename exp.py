@@ -277,6 +277,10 @@ def runTrialSequence(cfg):
     performance['reactiontime_s']     = []
     performance['movementtime_s']     = []
     performance['scoredpoints']       = []
+    performance['W_hat']              = []
+
+    cfg['run']['new_W_hat'] = 0
+
 
     cfg['run']['performance'] = performance
 
@@ -306,6 +310,7 @@ def runTrialSequence(cfg):
                     g = globals()
                     g['performance'] = performance
                     g['triallist']   = triallist
+                    g['new_W_hat']   = 0
                     # accompanied by an empty 'locals' dictionary
                     l = {}
                     # and it is executed
@@ -314,6 +319,8 @@ def runTrialSequence(cfg):
                     # the updated triallist should now be in the 'locals' dictionary
                     # so we copy it to the the running trial list
                     cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+                    cfg['run']['new_W_hat'] = copy.deepcopy(l['new_W_hat'])
+                    # print(cfg['run']['new_W_hat'])
 
 
 
@@ -402,11 +409,18 @@ def runTrial(cfg):
     # 1: rotations:
     rotation_deg = trialdict['rotation']
     rotation_rad = (rotation_deg/180)*math.pi
+    # 2: cursor error gains:
+    if 'cursorerrorgain' in trialdict.keys():
+        cursorerrorgain = trialdict['cursorerrorgain']
+    else:
+        cursorerrorgain = 1
+    
     # 2: error gains:
     if 'errorgain' in trialdict.keys():
         errorgain = trialdict['errorgain']
     else:
         errorgain = 1
+    
     # 3: distance gains:
     distancegain = 1 # NO USE FOR THIS YET: IMPLEMENT LATER
 
@@ -483,6 +497,16 @@ def runTrial(cfg):
             cursorPos = [(relX * math.cos(targetangle_rad)) - (relY * math.sin(targetangle_rad)),
                                  (relX * math.sin(targetangle_rad)) + (relY * math.cos(targetangle_rad))]
 
+        if (cursorerrorgain != 1) and (not clamped):
+            relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
+            unrot = -1 * targetangle_rad
+            relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
+                                 (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
+            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * cursorerrorgain
+
+            cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
+                         (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
+
         if rotation_deg != 0:
             relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
             unrot = -1 * targetangle_rad
@@ -493,15 +517,15 @@ def runTrial(cfg):
             cursorPos = [(math.cos(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[0],
                          (math.sin(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[1]]
 
-        if (errorgain != 1) and (not clamped):
-            relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
-            unrot = -1 * targetangle_rad
-            relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
-                                 (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
-            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * errorgain
+        # if (errorgain != 1) and (not clamped):
+        #     relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
+        #     unrot = -1 * targetangle_rad
+        #     relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
+        #                          (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
+        #     relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * errorgain
 
-            cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
-                         (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
+        #     cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
+        #                  (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
 
         
         # recalculate distances with updated positions:
@@ -740,6 +764,8 @@ def storePerformance(cfg, trialdata):
     cfg['run']['performance']['movementtime_s'].append(movementtime)
 
     cfg['run']['performance']['scoredpoints'].append(trialdata['scoredpoints'])
+
+    cfg['run']['performance']['W_hat'].append(copy.deepcopy(cfg['run']['new_W_hat']))
 
     return(cfg)
 
