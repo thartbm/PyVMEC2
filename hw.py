@@ -56,7 +56,7 @@ def setupHardware(cfg):
         # this is not made yet, and is meant for non-psychopy displays
         cfg['hw']['display'] = dummyDisplay(cfg)
         # so if the display object is not a monitor, there will be errors
-        # and it should be a monitor anyway
+        # and it should/will be a monitor anyway
 
         # once we have non-psychopy displays (VR?) any psychopy tracker
         # should still be related to a window object (a psychopy display)
@@ -72,6 +72,8 @@ def setupHardware(cfg):
     # in case there are any 'wav' files in the resources folder
     # they are added as playable sound objects to the cfg
     cfg = addSounds(cfg)
+
+    # cfg = addMovies(cfg) #? some day...
 
     return(cfg)
 
@@ -91,7 +93,8 @@ def setupHardware(cfg):
 # the size of the tracker device (if applicable, e.g. optotrack... not so necessary)
 # and the size of the display device are known
 
-# for now there is no check on this, but we rely on users to smart
+# despite some checks, there is no guarantee for this...
+# we rely on users to smart
 
 # resolution and size have to be provided as a list of 2 numbers :
 # width and hieght in
@@ -379,10 +382,10 @@ class monitorDisplay:
         # instructions will be in the middle of the screen:
         self.instructions_pos = [0, 0]
         if (self.units == 'cm'):
-            self.instructions_height = 0.05 * min(self.size_cm)
+            self.instructions_height = 0.025 * min(self.size_cm)
 
         if (self.units == 'norm'):
-            self.instructions_height = 0.05 * min(self.size_norm)
+            self.instructions_height = 0.025 * min(self.size_norm)
 
         self.instructions = visual.TextStim( win = self.win,
                                              text = '[no instructions]',
@@ -392,11 +395,15 @@ class monitorDisplay:
                                              flipVert = flipVert)
 
         # pause time countdown:
-        self.pausecountdown_pos = [0,]
-        self.pausecountdown_height = copy.deepcopy(self.instructions_height) * 1.5
+        if (self.units == 'cm'):
+            self.pausecountdown_pos = [0,-0.4*min(self.size_cm)]
+            self.pausecountdown_height = 0.05 * min(self.size_cm)
+        if (self.units == 'norm'):
+            self.pausecountdown_pos = [0,-0.4*min(self.size_norm)]
+            self.pausecountdown_height = 0.05 * min(self.size_cm)
         self.pausecountdown = visual.TextStim( win = self.win,
                                                text = '',
-                                               pos = ,
+                                               pos = self.pausecountdown_pos,
                                                height = self.instructions_height,
                                                flipHoriz = flipHoriz,
                                                flipVert = flipVert)
@@ -435,7 +442,12 @@ class monitorDisplay:
             self.instructions.pos = pos
         self.instructions.draw()
 
-    def 
+    def showPauseCountdown(self, txt=None, pos=None):
+        if txt is not None:
+            self.pausecountdown.setText(text = txt)
+        if pos is not None:
+            self.pausecountdown.pos = pos
+        self.pausecountdown.draw()
 
 
     def doFrame(self): # THIS WILL GET THE TRIAL STATE DICTIONARY !!!!

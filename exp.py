@@ -3,6 +3,7 @@ import random, json, copy, math, os, sys, shutil, glob
 import numpy as np
 from scipy import optimize
 from time import time
+from psychopy import event
 
 # to make the scripts leaner, we should use numpy and homebrew for saving csvs, but:
 #import pandas as pd
@@ -695,6 +696,68 @@ def getDistance(pos_a, pos_b=None):
     return( math.sqrt( (pos_a[0]-pos_b[0])**2 + (pos_a[1]-pos_b[1])**2 ) )
 
 def runPause(cfg):
+
+    # get the config for THIS pause:
+    pausedict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
+
+    pausestart = time()
+
+    pause_ongoing = True
+    waiting = True
+
+    while pause_ongoing:
+
+        elapsed = time() - pausestart
+
+        if elapsed > pausedict['wait']:
+            waiting = False
+
+        if pausedict['display-type'] == 'text':
+            # set the instructions.text to the value of 'display-value'
+
+            cfg['hw']['display'].showInstructions(txt=pausedict['display-value'])
+
+        if (waiting and pausedict['showcountdown']):
+
+            countdown = ''
+
+            timer_s = np.int64(np.ceil(pausedict['wait'] - elapsed))
+            timer_m = timer_s // 60
+            timer_h = timer_m // 60 # REALLY ??? ah well... why not
+            if pausedict['wait'] > 3600:
+                countdown = countdown + '%d'%(timer_h)
+            if pausedict['wait'] > 60:
+                if len(countdown):
+                    countdown = countdown + '%02d'%(timer_m)
+                else:
+                    countdown = countdown + '%d'%(timer_m)
+            if len(countdown):
+                countdown = countdown + '%02d'%(timer_s)
+            else:
+                countdown = countdown + '%d'%(timer_s)
+
+            cfg['hw']['display'].showPauseCountdown(txt=countdown)
+
+        # test for the end of the pause "task":
+
+        if not waiting:
+
+            if pausedict['endpause'] == 'timeout':
+
+                pause_ongoing = False
+
+            if pausedict['endpause'] == 'button':
+                
+                keys = event.getKeys(keyList=['space'])
+                if len(keys):
+                    if 'space' in keys:
+                        pause_ongoing = False
+
+                cfg['hw']['display'].showPauseCountdown(txt='(press SPACE to continue)')
+
+        cfg['hw']['display'].doFrame()
+
+    # I don't think there's anything else to do?
 
     return(cfg)
 
