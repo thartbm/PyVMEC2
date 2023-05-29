@@ -391,6 +391,16 @@ class monitorDisplay:
                                              flipHoriz = flipHoriz,
                                              flipVert = flipVert)
 
+        # pause time countdown:
+        self.pausecountdown_pos = [0,]
+        self.pausecountdown_height = copy.deepcopy(self.instructions_height) * 1.5
+        self.pausecountdown = visual.TextStim( win = self.win,
+                                               text = '',
+                                               pos = ,
+                                               height = self.instructions_height,
+                                               flipHoriz = flipHoriz,
+                                               flipVert = flipVert)
+
     def showHome(self, homePos):
         self.home.pos = homePos
         self.home.draw()
@@ -424,6 +434,8 @@ class monitorDisplay:
         if pos is not None:
             self.instructions.pos = pos
         self.instructions.draw()
+
+    def 
 
 
     def doFrame(self): # THIS WILL GET THE TRIAL STATE DICTIONARY !!!!

@@ -126,6 +126,8 @@ def getTrialSequence(cfg):
             # show an image
             # play a video or audio recording (from the web?)
 
+            cfg = addPauseTask(cfg=cfg, el=el)
+
             pass
 
     return(cfg)
@@ -237,6 +239,13 @@ def addSuperTaskTrials(cfg, el):
                                  cfg = cfg )
 
     #print(subtask_properties)
+
+    return(cfg)
+
+def addPauseTask(cfg, el):
+
+    # what now? just add it... I guess
+    cfg['run']['triallist'] += [el]
 
     return(cfg)
 
@@ -376,7 +385,7 @@ def runTrialSequence(cfg):
 
         if trialtype == 'pause':
 
-            cfg = runPause(cfg) # NOT WRITTEN YET!
+            cfg = runPause(cfg=cfg) # NOT WRITTEN YET!
 
         # this has to be at the very end!
         cfg['run']['trialidx'] +=1
