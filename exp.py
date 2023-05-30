@@ -201,6 +201,7 @@ def addSuperTaskTrials(cfg, el):
     for k in range(len(el['subtasks'])):
         subtask_properties[el['subtasks'][k]['name']] = copy.deepcopy(pro_dic)
 
+
     # list with property values to populate subtasks
     # this will be refilled when empty while
     # looping through repeats of subtasks
@@ -230,20 +231,27 @@ def addSuperTaskTrials(cfg, el):
                     prop_vals[task_name][property] = temp_vals
 
                 #print(task_name, property)
-                app_val = prop_vals[task_name][property].pop()
+                app_val = prop_vals[task_name][property].pop(0)
                 subtask_properties[task_name][property] += [app_val]
 
-                subtask[property] = subtask_properties[task_name][property].pop()
+                subtask[property] = subtask_properties[task_name][property].pop(0)
 
             # now the subtask could be handed to addTaskTrials?
-            cfg = addTaskTrials( el = subtask,
-                                 cfg = cfg )
+            if subtask['type'] == 'task':
+                cfg = addTaskTrials( el = subtask,
+                                     cfg = cfg )
+            
+            if subtask['type'] == 'pause':
+                cfg = addPauseTask( cfg = cfg,
+                                    el = subtask )
 
     #print(subtask_properties)
 
     return(cfg)
 
 def addPauseTask(cfg, el):
+
+    # strip properties of regular tasks?
 
     # what now? just add it... I guess
     cfg['run']['triallist'] += [el]
