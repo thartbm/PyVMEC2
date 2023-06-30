@@ -2,11 +2,27 @@ import PyVMEC2.hw as hw
 import random, json, copy, math, os, sys, shutil, glob
 import numpy as np
 from scipy import optimize
+from time import time
+from psychopy import event
 
 # to make the scripts leaner, we should use numpy and homebrew for saving csvs, but:
 #import pandas as pd
 
 def runExperiment(experiment, participant):
+
+
+# FROM: https://discourse.psychopy.org/t/keypress-using-event-watikeys-not-working-until-after-mouse-click/9288
+
+# # Kill switch for Psychopy3 
+# esc_key= 'escape'
+# def quit():
+#     """ quit programme"""
+#     print ('User exited')
+#     win.close()
+#     core.quit()
+# # call globalKeys so that whenever user presses escape, quit function called
+# event.globalKeys.add(key=esc_key, func=quit)
+
 
     cfg = {}
     cfg['run'] = {}
@@ -15,6 +31,9 @@ def runExperiment(experiment, participant):
     cfg['run']['jsonfile'] = 'experiments/%s/%s.json'%(experiment, experiment)
 
     cfg = setupRun(cfg)
+
+    # active ESCAPE key
+
     cfg = runTrialSequence(cfg)
 
 def setupRun(cfg):
@@ -108,6 +127,8 @@ def getTrialSequence(cfg):
             # show an image
             # play a video or audio recording (from the web?)
 
+            cfg = addPauseTask(cfg=cfg, el=el)
+
             pass
 
     return(cfg)
@@ -180,6 +201,7 @@ def addSuperTaskTrials(cfg, el):
     for k in range(len(el['subtasks'])):
         subtask_properties[el['subtasks'][k]['name']] = copy.deepcopy(pro_dic)
 
+
     # list with property values to populate subtasks
     # this will be refilled when empty while
     # looping through repeats of subtasks
@@ -209,16 +231,30 @@ def addSuperTaskTrials(cfg, el):
                     prop_vals[task_name][property] = temp_vals
 
                 #print(task_name, property)
-                app_val = prop_vals[task_name][property].pop()
+                app_val = prop_vals[task_name][property].pop(0)
                 subtask_properties[task_name][property] += [app_val]
 
-                subtask[property] = subtask_properties[task_name][property].pop()
+                subtask[property] = subtask_properties[task_name][property].pop(0)
 
             # now the subtask could be handed to addTaskTrials?
-            cfg = addTaskTrials( el = subtask,
-                                 cfg = cfg )
+            if subtask['type'] == 'task':
+                cfg = addTaskTrials( el = subtask,
+                                     cfg = cfg )
+            
+            if subtask['type'] == 'pause':
+                cfg = addPauseTask( cfg = cfg,
+                                    el = subtask )
 
     #print(subtask_properties)
+
+    return(cfg)
+
+def addPauseTask(cfg, el):
+
+    # strip properties of regular tasks?
+
+    # what now? just add it... I guess
+    cfg['run']['triallist'] += [el]
 
     return(cfg)
 
@@ -259,11 +295,15 @@ def runTrialSequence(cfg):
     performance['reactiontime_s']     = []
     performance['movementtime_s']     = []
     performance['scoredpoints']       = []
+    performance['cursorerrorgain']    = []
+    performance['W_hat']              = []
+
+    cfg['run']['new_W_hat'] = 0
+
 
     cfg['run']['performance'] = performance
 
-    cfg['run']['points'] = 0 # will part of the state later on
-
+    # points are in here:
     cfg = initializeTrialState(cfg)
 
     while cfg['run']['trialidx'] < len(cfg['run']['triallist']):
@@ -289,6 +329,7 @@ def runTrialSequence(cfg):
                     g = globals()
                     g['performance'] = performance
                     g['triallist']   = triallist
+                    g['new_W_hat']   = 0
                     # accompanied by an empty 'locals' dictionary
                     l = {}
                     # and it is executed
@@ -297,6 +338,8 @@ def runTrialSequence(cfg):
                     # the updated triallist should now be in the 'locals' dictionary
                     # so we copy it to the the running trial list
                     cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+                    cfg['run']['new_W_hat'] = copy.deepcopy(l['new_W_hat'])
+                    # print(cfg['run']['new_W_hat'])
 
 
 
@@ -351,15 +394,15 @@ def runTrialSequence(cfg):
 
         if trialtype == 'pause':
 
-            cfg = runPause(cfg) # NOT WRITTEN YET!
+            cfg = runPause(cfg=cfg) # NOT WRITTEN YET!
 
         # this has to be at the very end!
         cfg['run']['trialidx'] +=1
 
-        # well... before this:
-        # STORE JSON!
-
+        # well... before this anyway:
         saveState(cfg) # should this be called "saveState()" ?
+    
+    savePerformance(cfg) # shorthand data... might be sufficient for some analyses?
 
     cfg['hw']['display'].shutDown()
 
@@ -370,27 +413,37 @@ def runTrial(cfg):
 
     trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
 
+    # set step to -3, scoredpoints to 0, and all stimuli to not be shown
+    cfg = resetTransientTrialState(cfg)
+    # record trial start time:
+    cfg['run']['trialstate']['transient']['trialstarttime'] = time()
+
     targetPos = getTargetPos(cfg)
-    #print(targetPos)
     targetangle_deg = trialdict['target']
     targetangle_rad = (targetangle_deg/180) * math.pi
 
     homePos = [0,0] # this could be changed at some point?
 
-    # we could keep track of the feedback status:
-    # feedbackstatus = {}
-    # for el in trialdict['feedback']:
-    #     feedbackstatus[el['name']] = None
-    # or skip it and only keep track of which feedback to give...
-
     # three kinds of perturbations of visual feedback:
+    # 1: rotations:
     rotation_deg = trialdict['rotation']
     rotation_rad = (rotation_deg/180)*math.pi
+    # 2: cursor error gains:
+    if 'cursorerrorgain' in trialdict.keys():
+        cursorerrorgain = trialdict['cursorerrorgain']
+    else:
+        trialdict['cursorerrorgain'] = 1
+        cursorerrorgain = 1
+    
+    # 2: error gains:
     if 'errorgain' in trialdict.keys():
         errorgain = trialdict['errorgain']
     else:
+        trialdict['errorgain'] = 1
         errorgain = 1
-    # distancegain = 1 # NO USE FOR THIS YET: IMPLEMENT LATER
+    
+    # 3: distance gains:
+    distancegain = 1 # NO USE FOR THIS YET: IMPLEMENT LATER
 
     if trialdict['cursor'] == 'clamped':
         clamped = True
@@ -414,15 +467,17 @@ def runTrial(cfg):
     trialdata['handy'] = []
     trialdata['time'] = []
     trialdata['step'] = []
+    trialdata['events'] = []
     # what else?
 
     trialdata['targetpos'] = targetPos
+    trialdata['scoredpoints'] = 0
 
     # STEPS:
     # -3  =  get to home position before actual trial starts
     # -2  =  hold - without target (timehold)
     # -1  =  hold - with target (prephold)
-    #  0  =  at home, start moving
+    #  0  =  at home, start moving (go signal)
     #  1  =  left home, moving to target
     #  2  =  arrived at target or target distance or stopped at minimal distance... (include wait/hold at end point?)
     #  3  =  at target, home is there: start moving (or target-distance)
@@ -433,15 +488,19 @@ def runTrial(cfg):
 
 
     home_target_distance = getDistance(homePos, targetPos)
+    target_radius = cfg['hw']['display'].target.radius
 
     inprogress = True
-    step = -3
+
+    planned_events = []
 
     while inprogress:
 
         # visual feedback location depends on real location as well:
         [X,Y,time_s] = cfg['hw']['tracker'].getPos()
         trackerPos = [X,Y]
+
+        frame_events = []
 
         cursorPos = trackerPos
 
@@ -459,6 +518,16 @@ def runTrial(cfg):
             cursorPos = [(relX * math.cos(targetangle_rad)) - (relY * math.sin(targetangle_rad)),
                                  (relX * math.sin(targetangle_rad)) + (relY * math.cos(targetangle_rad))]
 
+        if (cursorerrorgain != 1) and (not clamped):
+            relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
+            unrot = -1 * targetangle_rad
+            relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
+                                 (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
+            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * cursorerrorgain
+
+            cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
+                         (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
+
         if rotation_deg != 0:
             relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
             unrot = -1 * targetangle_rad
@@ -469,57 +538,66 @@ def runTrial(cfg):
             cursorPos = [(math.cos(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[0],
                          (math.sin(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[1]]
 
-        if (errorgain != 1) and (not clamped):
-            relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
-            unrot = -1 * targetangle_rad
-            relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
-                                 (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
-            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * errorgain
+        # if (errorgain != 1) and (not clamped):
+        #     relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
+        #     unrot = -1 * targetangle_rad
+        #     relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
+        #                          (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
+        #     relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * errorgain
 
-            cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
-                         (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
+        #     cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
+        #                  (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
 
-
+        
+        # recalculate distances with updated positions:
+        home_cursor_distance = getDistance(homePos, cursorPos)
+        target_cursor_distance = getDistance(targetPos, cursorPos)
 
         # STEPS NEED TO BE TAKEN:
-        if step < 0:
+        if cfg['run']['trialstate']['transient']['step'] < 0:
+            # PERIOD BEFORE CURSOR IS AT HOME
             # SPLIT FOR HOLD PERIODS... right now: only the go to home part
             if (home_cursor_distance <= home_radius):
-                #print('entering step 0')
-                step = 0
+                cfg['run']['trialstate']['transient']['step'] = 0
+                cfg['run']['trialstate']['transient']['gotime'] = time_s
 
-        if step == 0:
+        if cfg['run']['trialstate']['transient']['step'] == 0:
+            # AT HOME WITH TARGET PRESENTED... WAITING FOR REACTION
             if (home_cursor_distance > home_radius):
-                #print('entering step 1')
-                step = 1
+                # print('entering step 1')
 
-        if step == 1:
+                cfg['run']['trialstate']['transient']['step'] = 1
+                cfg['run']['trialstate']['transient']['reactiontime'] = time_s - cfg['run']['trialstate']['transient']['gotime']
+
+        if cfg['run']['trialstate']['transient']['step'] == 1:
             # IF criterion is DISTANCE:
-            if (home_cursor_distance > (home_target_distance - target_radius)):
-                #print('entering step 2')
-                step = 2
+            if trialdict['reachcompletioncriterion']['type'] == 'homecursordistance':
+                if home_cursor_distance > (trialdict['reachcompletioncriterion']['hometargetdistance_prop'] * home_target_distance):
+                    cfg['run']['trialstate']['transient']['step'] = 2
+            # IF criterion is ACQUIRE:
+            if trialdict['reachcompletioncriterion']['type'] == 'acquire':
+                if target_cursor_distance < (trialdict['reachcompletioncriterion']['targetradius_prop'] * target_radius):
+                    cfg['run']['trialstate']['transient']['step'] = 2
+            
+            # update times in transient trial state upon reach completion:
+            if cfg['run']['trialstate']['transient']['step'] == 2:
+                cfg['run']['trialstate']['transient']['movementtime'] = time_s - cfg['run']['trialstate']['transient']['gotime'] - cfg['run']['trialstate']['transient']['reactiontime']
+                cfg['run']['trialstate']['transient']['completiontime'] = cfg['run']['trialstate']['transient']['reactiontime'] + cfg['run']['trialstate']['transient']['movementtime']
 
-            # acquire:
-            # if (target_cursor_distance < target_radius):
-            #     step == 2
 
-        if step == 2:
+
+        if cfg['run']['trialstate']['transient']['step'] == 2:
             if (home_cursor_distance < (home_target_distance - target_radius)):
                 #print('entering step 4')
-                step = 4
+                cfg['run']['trialstate']['transient']['step'] = 4
 
-            # acquire:
-            # if (target_cursor_distance > target_radius):
-            #     step == 4
-
-        if step == 3:
+        if cfg['run']['trialstate']['transient']['step'] == 3:
             # this would be a HOLD at the target (skipping for now)
             pass
 
-        if step == 4:
+        if cfg['run']['trialstate']['transient']['step'] == 4:
             if (home_cursor_distance < home_radius):
-                #print('entering current final step')
-                step = 5
+                cfg['run']['trialstate']['transient']['step'] = 5
                 inprogress = False
                 # back at home
                 # for now: nothing else happens but we can have a 5th and 6th step later on
@@ -529,7 +607,9 @@ def runTrial(cfg):
         trialdata['handx'].append(trackerPos[0])
         trialdata['handy'].append(trackerPos[1])
         trialdata['time'].append(time_s)
-        trialdata['step'].append(step)
+        trialdata['step'].append(cfg['run']['trialstate']['transient']['step'])
+
+        trialdata['events'].append('') # 
 
         # distances to check feedback rules:
         distances = {}
@@ -537,23 +617,41 @@ def runTrial(cfg):
         distances['target_cursor_distance'] = target_cursor_distance
         distances['home_target_distance']   = home_target_distance
 
-        # check feedback rules:
-        # [status, events] = checkFeedbackRules( trialdict = trialdict,
-        #                                        trialdata = trialdata,
-        #                                        distances = distances  )
+        # positions to implement certain feedback:
+        positions = {}
+        positions['home_pos'] = homePos
+        positions['cursor_pos'] = cursorPos
+        positions['target_pos'] = targetPos
 
-        # cfg = handleEvents( cfg       = cfg,
-        #                     trialdict = trialdict,
-        #                     trialdata = trialdata )
+        # check feedback rules:
+        trialdict = checkFeedbackRules( cfg        = cfg,
+                                        trialdict  = trialdict,
+                                        trialdata  = trialdata,
+                                        distances  = distances,
+                                        positions  = positions  )
+
+        # see if anything needs to happen right now:
+        [cfg, trialdict] = handleEvents( cfg            = cfg,
+                                         trialdict      = trialdict,
+                                         trialdata      = trialdata )  # not using trialdata so far...
 
         # show visual elements
-        if (step in [-3, -2, -1, 0, 2, 3, 4]):
+        # THIS SHOULD BE OUTSOURCED to a function:
+        if (cfg['run']['trialstate']['transient']['showImprintTarget']):
+            cfg['hw']['display'].showTargetImprint(cfg['run']['trialstate']['transient']['imprintTargetPos'])
+        if (cfg['run']['trialstate']['transient']['showImprintCursor']):
+            cfg['hw']['display'].showCursorImprint(cfg['run']['trialstate']['transient']['imprintCursorPos'])
+        if (cfg['run']['trialstate']['transient']['showHome']):
             cfg['hw']['display'].showHome(homePos)
-
-        if (step in [0, 1, 2]):
+        if cfg['run']['trialstate']['transient']['showTarget']:
             cfg['hw']['display'].showTarget(targetPos)
+        if cfg['run']['trialstate']['transient']['showCursor']:
+            cfg['hw']['display'].showCursor(cursorPos)
 
-        cfg['hw']['display'].showCursor(cursorPos)
+
+        # instr = 'step: %d'%cfg['run']['trialstate']['transient']['step']
+        # cfg['hw']['display'].showInstructions(txt = instr,
+        #                                       pos = (-8,-4) )
 
         cfg['hw']['display'].doFrame()
 
@@ -607,6 +705,68 @@ def getDistance(pos_a, pos_b=None):
 
 def runPause(cfg):
 
+    # get the config for THIS pause:
+    pausedict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
+
+    pausestart = time()
+
+    pause_ongoing = True
+    waiting = True
+
+    while pause_ongoing:
+
+        elapsed = time() - pausestart
+
+        if elapsed > pausedict['wait']:
+            waiting = False
+
+        if pausedict['display-type'] == 'text':
+            # set the instructions.text to the value of 'display-value'
+
+            cfg['hw']['display'].showInstructions(txt=pausedict['display-value'])
+
+        if (waiting and pausedict['showcountdown']):
+
+            countdown = ''
+
+            timer_s = np.int64(np.ceil(pausedict['wait'] - elapsed))
+            timer_m = timer_s // 60
+            timer_h = timer_m // 60 # REALLY ??? ah well... why not
+            if pausedict['wait'] > 3600:
+                countdown = countdown + '%d'%(timer_h)
+            if pausedict['wait'] > 60:
+                if len(countdown):
+                    countdown = countdown + '%02d'%(timer_m)
+                else:
+                    countdown = countdown + '%d'%(timer_m)
+            if len(countdown):
+                countdown = countdown + '%02d'%(timer_s)
+            else:
+                countdown = countdown + '%d'%(timer_s)
+
+            cfg['hw']['display'].showPauseCountdown(txt=countdown)
+
+        # test for the end of the pause "task":
+
+        if not waiting:
+
+            if pausedict['endpause'] == 'timeout':
+
+                pause_ongoing = False
+
+            if pausedict['endpause'] == 'button':
+                
+                keys = event.getKeys(keyList=['space'])
+                if len(keys):
+                    if 'space' in keys:
+                        pause_ongoing = False
+
+                cfg['hw']['display'].showPauseCountdown(txt='(press SPACE to continue)')
+
+        cfg['hw']['display'].doFrame()
+
+    # I don't think there's anything else to do?
+
     return(cfg)
 
 def saveTrialdata(cfg, trialdata):
@@ -649,6 +809,7 @@ def storePerformance(cfg, trialdata):
     cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
     cfg['run']['performance']['rotation'].append(trialdata['rotation'])
     cfg['run']['performance']['errorgain'].append(trialdata['errorgain'])
+    cfg['run']['performance']['cursorerrorgain'].append(trialdata['cursorerrorgain'])
     cfg['run']['performance']['feedbacktype'].append(trialdata['cursor'])
 
     display_unit = cfg['hw']['display'].units
@@ -686,7 +847,26 @@ def storePerformance(cfg, trialdata):
     movementtime = max(arr[:,3]) - start_s - reactiontime
     cfg['run']['performance']['movementtime_s'].append(movementtime)
 
+    cfg['run']['performance']['scoredpoints'].append(trialdata['scoredpoints'])
+
+    cfg['run']['performance']['W_hat'].append(copy.deepcopy(cfg['run']['new_W_hat']))
+
     return(cfg)
+
+def savePerformance(cfg):
+
+    performance = cfg['run']['performance']
+
+    performance_array = np.array(tuple(performance.values())).T
+
+    filename = '%sperformance.csv'%(cfg['run']['path'])
+
+    header = ','.join(performance.keys())
+
+    np.savetxt(filename, performance_array, delimiter=',', header=header, fmt='%s', comments="")
+
+    return
+
 
 def saveState(cfg):
 
@@ -696,13 +876,27 @@ def saveState(cfg):
     # - experiment
     # - run
 
+    # EXCEPT:
+    # - run['triallist']
+
     #print(cfg.keys())
 
     state = {}
     state_keys = ['name', 'settings', 'experiment', 'run']
+    # we exclude 'hw' (monitor object) and 'bin' (sounds, compiled scripts) 
     for k in state_keys:
         if k in cfg.keys():
-            state[k] = copy.deepcopy(cfg[k])
+            if k == 'run':
+                # exclude 'triallist' from run
+                runkeys = list(cfg['run'].keys())
+                runkeys.remove('triallist')
+                run = {}
+                for runkey in runkeys:
+                    run[runkey] = copy.deepcopy(cfg['run'][runkey])
+                state[k] = run
+            else:
+                # all other parts we keep
+                state[k] = copy.deepcopy(cfg[k])
 
     filename = '%s/state.json'%(cfg['run']['path'])
 
@@ -719,59 +913,29 @@ def loadScripts(cfg):
 
     script_files = glob.glob('experiments/%s/resources/scripts/*.py'%(cfg['run']['experiment']), recursive=False)
 
+    print(script_files)
+
     if len(script_files):
 
-        for script_file in script_files:
-            # the script should be here:
-            filename = 'experiments/%s/resources/scripts/%s.py'%(cfg['run']['experiment'],script_file)
-            if (os.path.exists(filename)):
+        for script_path in script_files:
+            if (os.path.exists(script_path)):
+                file_name = os.path.basename(script_path)
+                script_name = os.path.splitext(file_name)[0]
                 # we use that filename:
-                with open(filename) as fh:
+                with open(script_path) as fh:
                     # to compile whatever is in ther:
                     code = compile( source = fh.read(),
-                                    filename = filename,
+                                    filename = script_path,
                                     mode = 'exec' )
-                    cfg['bin']['scripts'][script_file] = code
+                    cfg['bin']['scripts'][script_name] = code
                     # the compile step is not strictly necessary,
                     # but SO says it gives line numbers in the file if there are errors/crashes
                     # might also run faster?
 
+    print(cfg['bin']['scripts'].keys())
+
 
     return( cfg )
-
-def checkFeedbackRules(trialdict, trialdata, distances):
-
-    # trialdict['feedback'] will have the feedback rules
-    # trialdata will have all data necessary to check the rules
-
-    feedbackrules = copy.deepcopy(trialdict['feedbackrules'])
-
-    for fbr in feedbackrules:
-        #satisfied = False ?? not even sure if the rule needs to be applied at all...
-        print(fbr.keys())
-        for cr in fbr['criteria']:
-
-            if cr == 'event':
-                # stuff that just happens
-                print(cr)
-                pass
-
-            if cr == 'speed':
-                pass
-
-            if cr == 'accuracy':
-                pass
-
-
-
-
-    return() # what do we return?
-
-def handleEvents( cfg, trialdict, trialdata ):
-
-
-
-    return(cfg)
 
 def initializeTrialState(cfg):
 
@@ -798,15 +962,243 @@ def resetPersistentTrialState(cfg):
 
 def resetTransientTrialState(cfg):
 
-    cfg['run']['trialstate']['transient']['showCursor'] = True
-    cfg['run']['trialstate']['transient']['showHome'] = True
-    cfg['run']['trialstate']['transient']['showTarget'] = False
-    cfg['run']['trialstate']['transient']['showImprint'] = False
-    # cfg['run']['trialstate']['transient']['showHand'] = False
-    cfg['run']['trialstate']['transient']['homeStartHoldFinished'] = 0
-    cfg['run']['trialstate']['transient']['homeFinishHoldFinished'] = 0
-    cfg['run']['trialstate']['transient']['targetHoldFinished'] = 0
+    cfg['run']['trialstate']['transient']['showCursor']             = False
+    cfg['run']['trialstate']['transient']['showHome']               = False
+    cfg['run']['trialstate']['transient']['showTarget']             = False
+    cfg['run']['trialstate']['transient']['showImprintCursor']      = False
+    cfg['run']['trialstate']['transient']['imprintCursorPos']       = (0,0)
+    cfg['run']['trialstate']['transient']['showImprintTarget']      = False
+    cfg['run']['trialstate']['transient']['imprintTargetPos']       = (0,0)
+    cfg['run']['trialstate']['transient']['showTargetArc']          = False
+    cfg['run']['trialstate']['transient']['showCursorArc']          = False
+    # cfg['run']['trialstate']['transient']['showHand']               = False
+    
+    cfg['run']['trialstate']['transient']['home'] = False
+    cfg['run']['trialstate']['transient']['out']  = False
+    cfg['run']['trialstate']['transient']['back'] = False
 
-    # what else?
+    cfg['run']['trialstate']['transient']['homeStartHoldFinished']  =  0
+    cfg['run']['trialstate']['transient']['homeFinishHoldFinished'] =  0
+    cfg['run']['trialstate']['transient']['targetHoldFinished']     =  0
+    cfg['run']['trialstate']['transient']['step']                   = -3
+
+    # cfg['run']['trialstate']['transient']
+    # timing information:
+    cfg['run']['trialstate']['transient']['trialstarttime']         =  0
+    cfg['run']['trialstate']['transient']['gotime']                 =  0
+    cfg['run']['trialstate']['transient']['reactiontime']           =  0
+    cfg['run']['trialstate']['transient']['movementtime']           =  0
+    cfg['run']['trialstate']['transient']['completiontime']         =  0
 
     return(cfg)
+
+def handleEvents( cfg, trialdict, trialdata):
+
+    events = trialdict["events"]
+    remove_events = []
+
+    for event_idx in range(len(events)):
+        # print(event_idx)
+        # print(len(events))
+
+        event = events[event_idx]
+        do_event = False
+        if event['trigger']['type'] == 'transient-state-change':
+            do_event = checkTransientStateChangeTrigger(cfg=cfg, trigger=event['trigger'])
+        if event['trigger']['type'] == 'time':
+            do_event = checkTimeTrigger(trigger = event['trigger'])
+            # if do_event:
+            #     print(event)
+            #     print(cfg['run']['trialstate']['transient']['imprintCursorPos'])
+
+        if do_event:
+            # implement the effect
+            trialdict = implementEventEffect(event=event, cfg=cfg, trialdict=trialdict)
+            # remove the event, since we only have to do it once!
+            remove_events += [event_idx]
+
+    remove_events.sort(reverse=True)
+    for del_event in remove_events:
+        # print({'del_event':del_event, 'len_events':len(trialdict["events"])})
+        del trialdict["events"][del_event]
+
+    return(cfg, trialdict)
+
+def checkTransientStateChangeTrigger(cfg, trigger):
+    check = False
+    if cfg['run']['trialstate']['transient'][trigger['property']] == trigger['value']:
+        check = True
+    return(check)
+
+def checkTimeTrigger(trigger):
+    check = False
+    now = time()
+    if now > trigger['value']:
+        check = True
+    return(check)
+
+def implementEventEffect(event, cfg, trialdict):
+
+    effect = event['effect']
+
+    if effect['type'] == 'transient-state':
+        if effect['delay'] == 0:
+            # we implement the effect right away
+            for param in effect['parameters'].keys():
+                cfg['run']['trialstate']['transient'][param] = effect['parameters'][param]
+        else:
+            # we add the effect as a timed effect to the event list
+            new_event = copy.deepcopy(event)
+            new_event['property']        = 'time'
+            new_event['value']           = time() + effect['delay']
+            new_event['effect']['delay'] = 0
+            trialdict['events'] += [new_event]
+
+    if effect['type'] == 'sound':
+        cfg['hw']['sounds'][effect['file']].play()
+
+    return(trialdict)
+
+def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
+
+    new_events = []
+
+    # trialdict['feedback'] will have the feedback rules
+    # trialdata will have all data necessary to check the rules
+
+    feedbackrules = copy.deepcopy(trialdict['feedbackrules'])
+
+    remove_feedbackrules = []
+
+    for fbr_idx in range(len(feedbackrules)):
+
+        fbr = feedbackrules[fbr_idx]
+        #satisfied = False ?? not even sure if the rule needs to be applied at all...
+        
+        # do we test the rule?
+        if testEvent(event = fbr['event'],
+                     cfg = cfg,
+                     trialdict = trialdict,
+                     trialdata = trialdata,
+                     distances = distances,
+                     positions = positions):
+            rule_passed = True # will fail on missing any single specified criterion
+        else:
+            continue # check next rule
+
+        # whether or not the tests are passed: the rule is removed
+        remove_feedbackrules += [fbr_idx]
+
+        for cr in fbr['criteria']:   # loop through list of criteria, each is a dict
+            
+            crit_type = list(cr.keys())[0]
+
+            if crit_type == 'speed':
+                if testSpeed(test = cr['speed'],
+                             cfg = cfg):
+                    #print('rule passed')
+                    pass
+                else:
+                    #print('rule failed')
+                    rule_passed = False
+
+            if crit_type == 'accuracy':
+                if testAccuracy(test = cr['accuracy'],
+                                positions = positions,
+                                distances = distances):
+                    #print('rule passed')
+                    pass
+                else:
+                    #print('rule failed')
+                    rule_passed = False
+        
+        for fb in fbr['feedback']:
+            fb_type = list(fb.keys())[0]
+
+            if rule_passed:
+                value = fb[fb_type]['value'][0]
+            else:
+                value = fb[fb_type]['value'][1]
+
+            if fb_type == 'imprint':
+                now    = time()
+                onset  = now + fb['imprint']['event']['duration'][0]
+                offset = now + fb['imprint']['event']['duration'][1]
+                # technically, the below thing is only for cursors... will make more flexible later:
+
+                if value == 'cursor':
+                    cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
+                    new_events += [ {'trigger' : {'type'      : 'time',
+                                                'value'     :  onset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintCursor' : True}}},
+                                    {'trigger' : {'type'      : 'time',
+                                                'value'     :  offset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintCursor' : False}}} ]             
+                if value == 'target':
+                    cfg['run']['trialstate']['transient']['imprintTargetPos'] = positions['target_pos']
+                    cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
+                    new_events += [ {'trigger' : {'type'      : 'time',
+                                                'value'     :  onset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintTarget' : True}}},
+                                    {'trigger' : {'type'      : 'time',
+                                                'value'     :  offset},
+                                    'effect' : { 'type'       : 'transient-state',
+                                                'delay'      : 0,
+                                                'parameters' : {'showImprintTarget' : False}}} ] 
+                    
+            if fb_type == 'sound':
+                
+                if fb[fb_type]['event']['type'] == 'time':
+                    onset = time() + fb[fb_type]['event']['delay']
+                    
+                    new_events += [ {'trigger' : {'type' : 'time', 'value': onset},
+                                     'effect'  : {'type' : 'sound', 'file' : value}} ]
+                #print(new_events[-1])
+
+                
+    trialdict['events'] += new_events
+
+    remove_feedbackrules.sort(reverse=True)
+    for del_fbr in remove_feedbackrules:
+        del trialdict['feedbackrules'][del_fbr]
+
+    return(trialdict)
+
+def testEvent(event, cfg, trialdict, trialdata, distances, positions):
+
+    if event['type'] == 'transient-state-change':
+        if cfg['run']['trialstate']['transient'][event['property']] != event['value']:
+            return(False)
+        else:
+            return(True)
+
+    print('event rule untested, considered failed')
+    return(False)
+
+def testSpeed(test, cfg):
+
+    if test['testvariable'] in ['reactiontime', 'movementtime', 'completiontime']:
+        value = cfg['run']['trialstate']['transient'][test['testvariable']]
+    
+    if value >= test['testrange'][0] and value <= test['testrange'][1]:
+        #print('speed test passed')
+        return(True)
+    #print('speed test failed')
+
+    return(False)
+
+def testAccuracy(test, positions, distances):
+
+    if test['testvariable'] in ['home_cursor_distance', 'target_cursor_distance', 'home_target_distance']:
+        value = distances[test['testvariable']]
+
+    if value >= test['testrange'][0] and value <= test['testrange'][1]:
+        return(True)
+
+    return(False)

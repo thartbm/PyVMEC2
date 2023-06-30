@@ -56,7 +56,7 @@ def setupHardware(cfg):
         # this is not made yet, and is meant for non-psychopy displays
         cfg['hw']['display'] = dummyDisplay(cfg)
         # so if the display object is not a monitor, there will be errors
-        # and it should be a monitor anyway
+        # and it should/will be a monitor anyway
 
         # once we have non-psychopy displays (VR?) any psychopy tracker
         # should still be related to a window object (a psychopy display)
@@ -72,6 +72,8 @@ def setupHardware(cfg):
     # in case there are any 'wav' files in the resources folder
     # they are added as playable sound objects to the cfg
     cfg = addSounds(cfg)
+
+    # cfg = addMovies(cfg) #? some day...
 
     return(cfg)
 
@@ -91,7 +93,8 @@ def setupHardware(cfg):
 # the size of the tracker device (if applicable, e.g. optotrack... not so necessary)
 # and the size of the display device are known
 
-# for now there is no check on this, but we rely on users to smart
+# despite some checks, there is no guarantee for this...
+# we rely on users to smart
 
 # resolution and size have to be provided as a list of 2 numbers :
 # width and hieght in
@@ -241,8 +244,12 @@ class monitorDisplay:
                                   monitor = self.monitor,
                                   units = self.units,
                                   fullscr = self.fullscreen,
+<<<<<<< HEAD
                                   viewScale = self.viewscale
                                 )
+=======
+                                  viewScale = self.viewscale)
+>>>>>>> feedback
 
         stimuli = copy.deepcopy(cfg['settings']['stimuli'])
 
@@ -271,6 +278,8 @@ class monitorDisplay:
         self.off_pos = [max(self.size_px)*3,max(self.size_px)*3]
 
         stimuli = copy.deepcopy(cfg['settings']['stimuli'])
+
+        # seems like units are inherited from the window object, so they should NEVER be set
 
         self.home = visual.Circle( win = self.win,
                                    edges = stimuli['home']['edges'],
@@ -304,8 +313,35 @@ class monitorDisplay:
                                              radius = self.cursor_radius,
                                              pos = self.off_pos)
 
+        self.target_imprint = visual.Circle( win = self.win,
+                                             edges = stimuli['target_imprint']['edges'],
+                                             lineWidth = stimuli['target_imprint']['lineWidth'],
+                                             lineColor = stimuli['target_imprint']['lineColor'],
+                                             fillColor = stimuli['target_imprint']['fillColor'],
+                                             radius = self.cursor_radius,
+                                             pos = self.off_pos)
+
+        self.target_arc = visual.Pie( win = self.win,
+                                      edges = stimuli['target_arc']['edges'],
+                                      lineWidth = stimuli['target_arc']['lineWidth'],
+                                      lineColor = stimuli['target_arc']['lineColor'],
+                                      fillColor = None,
+                                      radius = stimuli['target_arc']['radius'],
+                                      start = stimuli['target_arc']['start'],
+                                      end = stimuli['target_arc']['end'],
+                                      pos = self.off_pos)
+
+        self.cursor_arc = visual.Pie( win = self.win,
+                                      edges = stimuli['cursor_arc']['edges'],
+                                      lineWidth = stimuli['cursor_arc']['lineWidth'],
+                                      lineColor = stimuli['cursor_arc']['lineColor'],
+                                      fillColor = None,
+                                      radius = stimuli['cursor_arc']['radius'],
+                                      start = stimuli['cursor_arc']['start'],
+                                      end = stimuli['cursor_arc']['end'],
+                                      pos = self.off_pos)
+
         # ADD TEXT STIMULI
-        # - trial counter
         # - instructions
 
         # we put the counter in the top-left corner
@@ -313,30 +349,67 @@ class monitorDisplay:
         # setting the position and size should be a function, so that
         # we can easily revert back to defaults... later
         if (self.units == 'cm'):
-            self.trialcounter_pos = [-1 * cfg['settings']['basictrial']['targetdistance_cm'], 1 * cfg['settings']['basictrial']['targetdistance_cm']]
+            self.trialcounter_pos = [ 1 * cfg['settings']['basictrial']['targetdistance_cm'], 1 * cfg['settings']['basictrial']['targetdistance_cm']]
             self.trialcounter_height = 0.05 * min(self.size_cm)
 
         if (self.units == 'norm'):
-            self.trialcounter_pos = [-1 * cfg['settings']['basictrial']['targetdistance_norm'], 1 * cfg['settings']['basictrial']['targetdistance_norm']]
+            self.trialcounter_pos = [ 1 * cfg['settings']['basictrial']['targetdistance_norm'], 1 * cfg['settings']['basictrial']['targetdistance_norm']]
             self.trialcounter_height = 0.05 * min(self.size_norm)
+
+        flipHoriz = cfg['settings']['devices']['display']['text_flips'][0]
+        flipVert  = cfg['settings']['devices']['display']['text_flips'][1]
 
         self.trialcounter = visual.TextStim( win = self.win,
                                              text = '0/0',
                                              pos = self.trialcounter_pos,
-                                             height = self.trialcounter_height)
+                                             height = self.trialcounter_height,
+                                             flipHoriz = flipHoriz,
+                                             flipVert = flipVert)
+
+        # points counter:
+        if (self.units == 'cm'):
+            self.pointscounter_pos = [-1 * cfg['settings']['basictrial']['targetdistance_cm'], 1 * cfg['settings']['basictrial']['targetdistance_cm']]
+            self.pointscounter_height = 0.05 * min(self.size_cm)
+
+        if (self.units == 'norm'):
+            self.pointscounter_pos = [-1 * cfg['settings']['basictrial']['targetdistance_norm'], 1 * cfg['settings']['basictrial']['targetdistance_norm']]
+            self.pointscounter_height = 0.05 * min(self.size_norm)
+
+        self.pointscounter = visual.TextStim( win = self.win,
+                                              text = '0/0',
+                                              pos = self.pointscounter_pos,
+                                              height = self.pointscounter_height,
+                                              flipHoriz = flipHoriz,
+                                              flipVert = flipVert)
 
         # instructions will be in the middle of the screen:
         self.instructions_pos = [0, 0]
         if (self.units == 'cm'):
-            self.instructions_height = 0.05 * min(self.size_cm)
+            self.instructions_height = 0.025 * min(self.size_cm)
 
         if (self.units == 'norm'):
-            self.instructions_height = 0.05 * min(self.size_norm)
+            self.instructions_height = 0.025 * min(self.size_norm)
 
         self.instructions = visual.TextStim( win = self.win,
                                              text = '[no instructions]',
                                              pos = self.instructions_pos,
-                                             height = self.instructions_height)
+                                             height = self.instructions_height,
+                                             flipHoriz = flipHoriz,
+                                             flipVert = flipVert)
+
+        # pause time countdown:
+        if (self.units == 'cm'):
+            self.pausecountdown_pos = [0,-0.4*min(self.size_cm)]
+            self.pausecountdown_height = 0.05 * min(self.size_cm)
+        if (self.units == 'norm'):
+            self.pausecountdown_pos = [0,-0.4*min(self.size_norm)]
+            self.pausecountdown_height = 0.05 * min(self.size_cm)
+        self.pausecountdown = visual.TextStim( win = self.win,
+                                               text = '',
+                                               pos = self.pausecountdown_pos,
+                                               height = self.instructions_height,
+                                               flipHoriz = flipHoriz,
+                                               flipVert = flipVert)
 
     def showHome(self, homePos):
         self.home.pos = homePos
@@ -352,9 +425,40 @@ class monitorDisplay:
 
     def showCursorImprint(self, cursorImprintPos):
         self.cursor_imprint.pos = cursorImprintPos
-        self.cursor_imrpint.draw()
+        self.cursor_imprint.draw()
 
-    def doFrame(self):
+    def showTargetImprint(self, targetImprintPos):
+        self.target_imprint.pos = targetImprintPos
+        self.target_imprint.draw()
+
+    def showPointsCounter(self, points, pos=None):
+        txt = '%d'%points
+        self.pointscounter.setText(text = txt)
+        if pos is not None:
+            self.pointscounter.pos = pos
+        self.pointscounter.draw()
+
+    def showInstructions(self, txt=None, pos=None):
+        if txt is not None:
+            self.instructions.setText(text  = txt)
+        if pos is not None:
+            self.instructions.pos = pos
+        self.instructions.draw()
+
+    def showPauseCountdown(self, txt=None, pos=None):
+        if txt is not None:
+            self.pausecountdown.setText(text = txt)
+        if pos is not None:
+            self.pausecountdown.pos = pos
+        self.pausecountdown.draw()
+
+
+    def doFrame(self): # THIS WILL GET THE TRIAL STATE DICTIONARY !!!!
+        
+        # AND HERE:
+        # FIRST DECIDE WHAT IS SHOWN... 
+        # rather than leaving this to the trial loop
+        
         # show stimuli:
         self.win.flip()
 
@@ -364,13 +468,13 @@ class monitorDisplay:
         self.cursor.pos = self.off_pos
         self.cursor_imprint.pos = self.off_pos
 
+
     def shutDown(self):
 
         self.win.close()
 
         # there are no:
         # - return feedback arrowhead
-        # - return feedback circle
         # - aiming arrow
         # - aiming landmarks
 
@@ -379,8 +483,6 @@ class monitorDisplay:
         # - for showing larger images (as visual instructions)
         # - for showing videos (even more detailed instructions)
 
-        # we could also add audio objects
-        # - as a start signal, or other timing information
 
 
 
