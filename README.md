@@ -61,38 +61,30 @@ $ pyenv global 3.8.10
 
 ## PsychoPy
 
-You can then install everything necessary to run PyVMEC2, still from commandline:
-
-```
-$ pip3 install psychopy==2021.2.3 wxwidgets ipython
-```
-
-Seems that wxwidgets is version 1.0.5, and ipython is 8.9.0 if that helps. wxWidgets uses the GTK+ 2 libraries, so these should also be installed on the system. Depending on your version of linux, this could look like:
+PsychoPy relies on wxWidgets which uses the GTK+ libraries, so these should also be installed on the system. Depending on your version of linux, this could look like:
 
 ```
 $ sudo apt-get install build-essential libgtk-3-dev
 ```
 
-
-## Numpy
-
-The newest versions of numpy use built-in float and int types, but PsychoPy doesn't, so we need an old numpy:
+You can then install everything necessary to run PyVMEC2, still from commandline:
 
 ```
-$ pip3 install numpy==1.22
+$ pip3 install psychopy==2021.2.3 wxwidgets==1.0.5 ipython==8.9.0 numpy==1.22
 ```
 
-## Screeninfo
+Seems that wxwidgets is version 1.0.5, and ipython is 8.9.0 if that helps. 
+
+
+## Screeninfo, Scipy
 
 For reading out information about monitors, we use the `screeninfo` module (version 0.8.1 currently):
 
 ```
-$ pip3 install screeninfo
+$ pip3 install screeninfo==0.8.1 scipy==1.3.3
 ```
 
-## Scipy
-
-For some advanced options, we use `scipy.optimize` and for now, the version we use is 1.3.3.
+For some advanced options, we use `scipy.optimize`.
 
 # Installing PyVMEC2
 
