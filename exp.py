@@ -953,8 +953,12 @@ def initializeTrialState(cfg):
 
 def resetPersistentTrialState(cfg):
 
-    # actually: this should come from the config json:
-    cfg['run']['trialstate']['persistent']['points'] = 0
+
+    if 'points' not in cfg['run']['trialstate']['persistent'].keys():
+        # actually: this should come from the config json:
+        cfg['run']['trialstate']['persistent']['points'] = 0
+    if 'run_onset' not in cfg['run']['trialstate']['persistent'].keys():
+        cfg['run']['trialstate']['persistent']['run_onset'] = time()
 
     # no other ones here yet...
 
