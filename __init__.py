@@ -3,7 +3,7 @@
 from PyVMEC2.hw import *
 from PyVMEC2.exp import *
 
-__all__ = [ 'runExperiment']
+__all__ = ['runExperiment']
 
             # 'loadJSON',
             # 'seedRNG',
