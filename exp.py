@@ -812,6 +812,11 @@ def saveTrialdata(cfg, trialdata):
 
 def storePerformance(cfg, trialdata):
 
+    if 'label' in trialdata.keys():
+        cfg['run']['performance']['label'].append(trialdata['label'])
+    else:
+        cfg['run']['performance']['label'].append('__nolabel__')
+
     cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
     cfg['run']['performance']['rotation'].append(trialdata['rotation'])
     cfg['run']['performance']['errorgain'].append(trialdata['errorgain'])
@@ -865,7 +870,7 @@ def savePerformance(cfg):
 
     performance_array = np.array(tuple(performance.values())).T
 
-    filename = '%sperformance.csv'%(cfg['run']['path'])
+    filename = '%s%s_performance.csv'%(cfg['run']['path'], cfg['run']['participant'])
 
     header = ','.join(performance.keys())
 
