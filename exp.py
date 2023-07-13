@@ -304,6 +304,8 @@ def runTrialSequence(cfg):
 
     cfg['run']['performance'] = performance
 
+    print(cfg['run']['performance'])
+
     # points are in here:
     cfg = initializeTrialState(cfg)
 
@@ -814,6 +816,7 @@ def storePerformance(cfg, trialdata):
 
     if 'label' in trialdata.keys():
         cfg['run']['performance']['label'].append(trialdata['label'])
+        print(trialdata['label'])
     else:
         cfg['run']['performance']['label'].append('__nolabel__')
 
