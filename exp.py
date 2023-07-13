@@ -287,6 +287,7 @@ def runTrialSequence(cfg):
     cfg['run']['trialidx'] = 0
 
     performance = {}
+    performance['label']              = []
     performance['targetangle_deg']    = []
     performance['rotation']           = []
     performance['errorgain']          = []
@@ -320,15 +321,20 @@ def runTrialSequence(cfg):
                 # the script should be here:
                 if pretrialscript in cfg['bin']['scripts'].keys():
 
+                    # fetch the binary version of the script:
                     code = cfg['bin']['scripts'][pretrialscript]
 
+                    # get performance on previous trials:
                     performance = copy.deepcopy(cfg['run']['performance'])
                     # and the list of UPCOMING trials only
                     triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                    # as well as the trialstate dictionary:
+                    trialstate  = copy.deepcope(cfg['run']['trialstate'])
                     # which are put in a 'globals' dictionary
                     g = globals()
                     g['performance'] = performance
                     g['triallist']   = triallist
+                    g['trialstate']  = trialstate
                     g['new_W_hat']   = 0
                     # accompanied by an empty 'locals' dictionary
                     l = {}
