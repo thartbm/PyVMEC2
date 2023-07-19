@@ -297,6 +297,7 @@ def runTrialSequence(cfg):
     performance['movementtime_s']     = []
     performance['scoredpoints']       = []
     performance['cursorerrorgain']    = []
+    performance['trialstarttime_s']   = []
     performance['W_hat']              = []
 
     cfg['run']['new_W_hat'] = 0
@@ -820,6 +821,8 @@ def storePerformance(cfg, trialdata):
     else:
         cfg['run']['performance']['label'].append('__nolabel__')
 
+    cfg['run']['performance']['trialstarttime_s'] = cfg['run']['trialstate']['transient']['trialstarttime']
+    
     cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
     cfg['run']['performance']['rotation'].append(trialdata['rotation'])
     cfg['run']['performance']['errorgain'].append(trialdata['errorgain'])
