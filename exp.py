@@ -352,7 +352,7 @@ def runTrialSequence(cfg):
                     cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
                     cfg['run']['new_W_hat'] = copy.deepcopy(l['new_W_hat'])
                     # print(cfg['run']['new_W_hat'])
-                    print(l['now'])
+                    
 
 
 
