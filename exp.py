@@ -324,6 +324,8 @@ def runTrialSequence(cfg):
                 # the script should be here:
                 if pretrialscript in cfg['bin']['scripts'].keys():
 
+                    print(pretrialscript)
+
                     # fetch the binary version of the script:
                     code = cfg['bin']['scripts'][pretrialscript]
 
@@ -335,6 +337,7 @@ def runTrialSequence(cfg):
                     trialstate  = copy.deepcope(cfg['run']['trialstate'])
                     # which are put in a 'globals' dictionary
                     g = globals()
+
                     g['performance'] = performance
                     g['triallist']   = triallist
                     g['trialstate']  = trialstate
@@ -817,12 +820,13 @@ def storePerformance(cfg, trialdata):
 
     if 'label' in trialdata.keys():
         cfg['run']['performance']['label'].append(trialdata['label'])
-        print(trialdata['label'])
+        # print(trialdata['label'])
     else:
         cfg['run']['performance']['label'].append('__nolabel__')
 
+    # does this work?
     cfg['run']['performance']['trialstarttime_s'] = cfg['run']['trialstate']['transient']['trialstarttime']
-    
+
     cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
     cfg['run']['performance']['rotation'].append(trialdata['rotation'])
     cfg['run']['performance']['errorgain'].append(trialdata['errorgain'])
