@@ -334,7 +334,7 @@ def runTrialSequence(cfg):
                     # and the list of UPCOMING trials only
                     triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
                     # as well as the trialstate dictionary:
-                    trialstate  = copy.deepcope(cfg['run']['trialstate'])
+                    trialstate  = copy.deepcopy(cfg['run']['trialstate'])
                     # which are put in a 'globals' dictionary
                     g = globals()
 
@@ -953,7 +953,7 @@ def loadScripts(cfg):
                     # but SO says it gives line numbers in the file if there are errors/crashes
                     # might also run faster?
 
-    print(cfg['bin']['scripts'].keys())
+    #print(cfg['bin']['scripts'].keys())
 
 
     return( cfg )
