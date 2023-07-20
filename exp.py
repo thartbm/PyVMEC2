@@ -324,7 +324,7 @@ def runTrialSequence(cfg):
                 # the script should be here:
                 if pretrialscript in cfg['bin']['scripts'].keys():
 
-                    print(pretrialscript)
+                    #print(pretrialscript)
 
                     # fetch the binary version of the script:
                     code = cfg['bin']['scripts'][pretrialscript]
@@ -826,7 +826,7 @@ def storePerformance(cfg, trialdata):
         cfg['run']['performance']['label'].append('__nolabel__')
 
     # does this work?
-    cfg['run']['performance']['trialstarttime_s'] = cfg['run']['trialstate']['transient']['trialstarttime']
+    cfg['run']['performance']['trialstarttime_s'].append(cfg['run']['trialstate']['transient']['trialstarttime'])
 
     cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
     cfg['run']['performance']['rotation'].append(trialdata['rotation'])
