@@ -318,25 +318,27 @@ class monitorDisplay:
                                              radius = self.cursor_radius,
                                              pos = self.off_pos)
 
-        self.target_arc = visual.Pie( win = self.win,
+        self.target_arc = Arc(        win = self.win,
+                                      units = self.units,
                                       edges = stimuli['target_arc']['edges'],
                                       lineWidth = stimuli['target_arc']['lineWidth'],
                                       lineColor = stimuli['target_arc']['lineColor'],
-                                      fillColor = None,
+                                      fillColor = stimuli['target_arc']['fillColor'],
                                       radius = stimuli['target_arc']['radius'],
+                                      width = stimuli['target_arc']['width'],
                                       start = stimuli['target_arc']['start'],
                                       end = stimuli['target_arc']['end'],
-                                      pos = self.off_pos)
+                                      pos = self.off_pos )
 
-        self.cursor_arc = visual.Pie( win = self.win,
-                                      edges = stimuli['cursor_arc']['edges'],
-                                      lineWidth = stimuli['cursor_arc']['lineWidth'],
-                                      lineColor = stimuli['cursor_arc']['lineColor'],
-                                      fillColor = None,
-                                      radius = stimuli['cursor_arc']['radius'],
-                                      start = stimuli['cursor_arc']['start'],
-                                      end = stimuli['cursor_arc']['end'],
-                                      pos = self.off_pos)
+        # self.cursor_arc = visual.Pie( win = self.win,
+        #                               edges = stimuli['cursor_arc']['edges'],
+        #                               lineWidth = stimuli['cursor_arc']['lineWidth'],
+        #                               lineColor = stimuli['cursor_arc']['lineColor'],
+        #                               fillColor = None,
+        #                               radius = stimuli['cursor_arc']['radius'],
+        #                               start = stimuli['cursor_arc']['start'],
+        #                               end = stimuli['cursor_arc']['end'],
+        #                               pos = self.off_pos)
 
         # ADD TEXT STIMULI
         # - instructions
@@ -415,6 +417,10 @@ class monitorDisplay:
     def showTarget(self, targetPos):
         self.target.pos = targetPos
         self.target.draw()
+
+    def showTargetArc(self, targetArcPos):
+        self.target_arc.pos = targetArcPos
+        self.target_arc.draw()
 
     def showCursor(self, cursorPos):
         self.cursor.pos = cursorPos
@@ -593,3 +599,59 @@ def addSounds(cfg):
     #sound.Sound('short_tick.wav', sampleRate=44100)
 
     return(cfg)
+
+
+class Arc:
+
+    def __init__(self, 
+                 win, 
+                 units,
+                 edges, 
+                 fillColor,
+                 radius,
+                 width,
+                 start,
+                 end,
+                 pos,
+                 ori = 0,
+                 lineWidth = 0,
+                 lineColor = None):
+
+        self.win = win
+        self.units = units
+        self.edges = edges
+        self.fillColor = fillColor
+        self.radius = radius
+        self.width = width
+        self.start = start
+        self.end = end
+        self.pos = pos
+        self.ori = ori
+
+
+        self.lineWidth = lineWidth
+        self.lineColor = lineColor
+
+        # determines the object's shape (and color, position, etc)
+        self.setVertices()
+
+    def setVertices(self):
+
+        self.vertices = []
+
+        self.vertices += [[np.cos(a)*(self.radius - (self.width/2)), np.sin(a)*(self.radius - (self.width/2))] for a in (np.linspace(self.start, self.end, num=int(np.floor(self.edges/2)))/180)*np.pi]
+        self.vertices += [[np.cos(a)*(self.radius + (self.width/2)), np.sin(a)*(self.radius + (self.width/2))] for a in (np.linspace(self.end, self.start, num=int(np.ceil(self.edges/2)))/180)*np.pi]
+
+        self.arcshape = visual.ShapeStim(win       = self.win,
+                                         units     = self.units,
+                                         fillColor = self.fillColor,
+                                         lineColor = self.lineColor,
+                                         lineWidth = self.lineWidth,
+                                         vertices  = self.vertices,
+                                         pos       = self.pos,
+                                         ori       = self.ori)
+
+    def draw(self):
+        # draw the shapestim
+        self.arcshape.pos = self.pos
+        self.arcshape.draw()

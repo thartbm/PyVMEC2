@@ -656,6 +656,8 @@ def runTrial(cfg):
             cfg['hw']['display'].showCursorImprint(cfg['run']['trialstate']['transient']['imprintCursorPos'])
         if (cfg['run']['trialstate']['transient']['showHome']):
             cfg['hw']['display'].showHome(homePos)
+        if cfg['run']['trialstate']['transient']['showTargetArc']:
+            cfg['hw']['display'].showTargetArc(homePos)
         if cfg['run']['trialstate']['transient']['showTarget']:
             cfg['hw']['display'].showTarget(targetPos)
         if cfg['run']['trialstate']['transient']['showCursor']:
