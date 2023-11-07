@@ -76,7 +76,7 @@ $ pip3 install psychopy==2021.2.3 wxwidgets==1.0.5 ipython==8.9.0 numpy==1.22
 Or, more recently:
 
 ```
-pip3 install psychopy==2021.2.3 wxwidgets==1.0.5 ipython==8.9.0 numpy==1.22 cython==0.29.36 sip==6.7.9 wxPython==4.1.1
+$ pip3 install psychopy==2021.2.3 wxwidgets==1.0.5 ipython==8.9.0 numpy==1.22 cython==0.29.36 sip==6.7.9 wxPython==4.1.1
 ```
 
 ## Screeninfo, Scipy
