@@ -309,6 +309,7 @@ def runTrialSequence(cfg):
 
     # points are in here:
     cfg = initializeTrialState(cfg)
+    # and steps? could shortcut to step 6 or whatever immediately ends the trial later on...
 
     while cfg['run']['trialidx'] < len(cfg['run']['triallist']):
 
@@ -318,9 +319,10 @@ def runTrialSequence(cfg):
         # IFF the pretrialscript key exists in the trial dictionary
         if ('pretrialscript' in trialdict.keys()):
             pretrialscript = trialdict['pretrialscript']
+            
             # AND it is not None (and actually a string: a filename)
             if (isinstance(pretrialscript, str)):
-
+            
                 # the script should be here:
                 if pretrialscript in cfg['bin']['scripts'].keys():
 
@@ -335,6 +337,8 @@ def runTrialSequence(cfg):
                     triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
                     # as well as the trialstate dictionary:
                     trialstate  = copy.deepcopy(cfg['run']['trialstate'])
+                    # and the trialdict dictionary? this is actually in the triallist... for ALL upcoming trials
+                    
                     # which are put in a 'globals' dictionary
                     g = globals()
 
@@ -347,44 +351,24 @@ def runTrialSequence(cfg):
                     # and it is executed
                     exec(code, g, l)
 
-                    # the updated triallist should now be in the 'locals' dictionary
-                    # so we copy it to the the running trial list
-                    cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
-                    cfg['run']['new_W_hat'] = copy.deepcopy(l['new_W_hat'])
-                    # print(cfg['run']['new_W_hat'])
-                    
+                    for check_key in l.keys():
+                        if check_key == 'triallist':
+                            cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+                        if check_key == 'new_W_hat':
+                            cfg['run']['new_W_hat'] = copy.deepcopy(l['new_W_hat'])
+                        if check_key == 'trialstate':
+                            cfg['run']['trialstate']['persistent']['customvariables']['variables'] = copy.deepcopy(l['trialstate']['persistent']['customvariables']['variables'])
 
+                    # # the updated triallist should now be in the 'locals' dictionary
+                    # # so we copy it to the the running trial list
+                    # cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+                    # cfg['run']['new_W_hat'] = copy.deepcopy(l['new_W_hat'])
+                    # cfg['run']['trialstate']['persistent']['customvariables']['variables'] = copy.deepcopy(l['trialstate']['persistent']['customvariables']['variables'])
+                    # # print(cfg['run']['new_W_hat'])
 
-
-                # filename = 'experiments/%s/resources/scripts/%s.py'%(cfg['run']['experiment'],pretrialscript)
-                # if (os.path.exists(filename)):
-                #
-                #     # we use that filename:
-                #     with open(filename) as fh:
-                #         # to compile whatever is in ther:
-                #         code = compile( source = fh.read(),
-                #                         filename = filename,
-                #                         mode = 'exec' )
-                #         # the compile step is not strictly necessary,
-                #         # but SO says it gives line numbers in the file if there are errors/crashes
-                #
-                #         # it gets as input the previous performance (not used in my example)
-                #         performance = copy.deepcopy(cfg['run']['performance'])
-                #         # and the list of UPCOMING trials only
-                #         triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
-                #         # which are put in a 'globals' dictionary
-                #         g = globals()
-                #         g['performance'] = performance
-                #         g['triallist']   = triallist
-                #         # accompanied by an empty 'locals' dictionary
-                #         l = {}
-                #         # and it is executed
-                #         exec(code, g, l)
-                #
-                #         # the updated triallist should now be in the 'locals' dictionary
-                #         # so we copy it to the the running trial list
-                #         cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
-
+        if cfg['run']['trialidx'] >= len(cfg['run']['triallist']):
+            # break out of the while loop:
+            break
 
         print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['run']['triallist']))
         trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
@@ -407,7 +391,7 @@ def runTrialSequence(cfg):
 
         if trialtype == 'pause':
 
-            cfg = runPause(cfg=cfg) # NOT WRITTEN YET!
+            cfg = runPause(cfg=cfg)
 
         # this has to be at the very end!
         cfg['run']['trialidx'] +=1
@@ -463,6 +447,11 @@ def runTrial(cfg):
     else:
         clamped = False
 
+    if 'homefinishholdduration' in trialdict.keys():
+        homefinishholdduration = trialdict['homefinishholdduration']
+    else:
+        homefinishholdduration = 0
+
 
     # we need the radius of things:
     [home_radius, target_radius, cursor_radius] = getRadii(cfg)
@@ -485,6 +474,8 @@ def runTrial(cfg):
 
     trialdata['targetpos'] = targetPos
     trialdata['scoredpoints'] = 0
+
+    # 
 
     # STEPS:
     # -3  =  get to home position before actual trial starts
@@ -567,6 +558,11 @@ def runTrial(cfg):
         target_cursor_distance = getDistance(targetPos, cursorPos)
 
         # STEPS NEED TO BE TAKEN:
+        # if cfg['run']['trialstate']['transient']['step'] < -1:
+        #     if (home_cursor_distance <= home_radius):
+        #         cfg['run']['trialstate']['transient']['step'] = -1
+
+
         if cfg['run']['trialstate']['transient']['step'] < 0:
             # PERIOD BEFORE CURSOR IS AT HOME
             # SPLIT FOR HOLD PERIODS... right now: only the go to home part
@@ -609,11 +605,23 @@ def runTrial(cfg):
             pass
 
         if cfg['run']['trialstate']['transient']['step'] == 4:
+            print('in step 4')
             if (home_cursor_distance < home_radius):
+                print('switching to step 5')
                 cfg['run']['trialstate']['transient']['step'] = 5
-                inprogress = False
+                cfg['run']['trialstate']['transient']['homeFinishHoldStartTime']  =  copy.deepcopy(time_s)
                 # back at home
-                # for now: nothing else happens but we can have a 5th and 6th step later on
+
+        if cfg['run']['trialstate']['transient']['step'] == 5:
+            print('in step 5')
+            print('hold duration: %0.3f s'%(time_s - cfg['run']['trialstate']['transient']['homeFinishHoldStartTime']))
+            if (home_cursor_distance > home_radius):
+                print('back to step 4...')
+                cfg['run']['trialstate']['transient']['step'] = 4
+                #cfg['run']['trialstate']['transient']['homeFinishHoldStartTime']  =  time_s
+            elif time_s >= (cfg['run']['trialstate']['transient']['homeFinishHoldStartTime'] + homefinishholdduration):
+                step = 6 # not sure what this would do, maybe a blank screen, but for now we say:
+                inprogress = False
 
 
         # record trajectory:
@@ -984,6 +992,10 @@ def resetPersistentTrialState(cfg):
     if 'run_onset' not in cfg['run']['trialstate']['persistent'].keys():
         cfg['run']['trialstate']['persistent']['run_onset'] = time()
 
+    if 'customvariables' not in cfg['run']['trialstate']['persistent'].keys():
+        cfg['run']['trialstate']['persistent']['customvariables'] = { 'rules' : {},
+                                                                      'variables' : {} }
+
     # no other ones here yet...
 
     return(cfg)
@@ -1005,10 +1017,13 @@ def resetTransientTrialState(cfg):
     cfg['run']['trialstate']['transient']['out']  = False
     cfg['run']['trialstate']['transient']['back'] = False
 
-    cfg['run']['trialstate']['transient']['homeStartHoldFinished']  =  0
-    cfg['run']['trialstate']['transient']['homeFinishHoldFinished'] =  0
-    cfg['run']['trialstate']['transient']['targetHoldFinished']     =  0
-    cfg['run']['trialstate']['transient']['step']                   = -3
+    cfg['run']['trialstate']['transient']['homeStartHoldStartTime']  =  0
+    cfg['run']['trialstate']['transient']['homeStartHoldFinished']   =  0
+    cfg['run']['trialstate']['transient']['homeFinishHoldStartTime'] =  0
+    cfg['run']['trialstate']['transient']['homeFinishHoldFinished']  =  0
+    cfg['run']['trialstate']['transient']['targetHoldStartTime']     =  0
+    cfg['run']['trialstate']['transient']['targetHoldFinished']      =  0
+    cfg['run']['trialstate']['transient']['step']                    = -3
 
     # cfg['run']['trialstate']['transient']
     # timing information:
