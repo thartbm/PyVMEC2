@@ -447,10 +447,18 @@ def runTrial(cfg):
     else:
         clamped = False
 
-    if 'homefinishholdduration' in trialdict.keys():
-        homefinishholdduration = trialdict['homefinishholdduration']
+    if 'holddurations' in trialdict.keys():
+        holddurations = trialdict['holddurations']
+        if 'start' not in holddurations.keys():
+            holddurations['start'] = 0.000
+        if 'target' not in holddurations.keys():
+            holddurations['target'] = 0.000
+        if 'finish' not in holddurations.keys():
+            holddurations['finish'] = 0.000
     else:
-        homefinishholdduration = 0
+        holddurations = { 'start'  : 0.000,
+                          'target' : 0.000,
+                          'finish' : 0.000 }
 
 
     # we need the radius of things:
@@ -558,12 +566,20 @@ def runTrial(cfg):
         target_cursor_distance = getDistance(targetPos, cursorPos)
 
         # STEPS NEED TO BE TAKEN:
-        # if cfg['run']['trialstate']['transient']['step'] < -1:
-        #     if (home_cursor_distance <= home_radius):
-        #         cfg['run']['trialstate']['transient']['step'] = -1
+        if cfg['run']['trialstate']['transient']['step'] < -1:
+            if (home_cursor_distance <= home_radius):
+                # start hold:
+                cfg['run']['trialstate']['transient']['step'] = -1
+                cfg['run']['trialstate']['transient']['StartHoldStartTime']  =  copy.deepcopy(time_s)
+
+        if cfg['run']['trialstate']['transient']['step'] == -1:
+            if (home_cursor_distance > home_radius):
+                cfg['run']['trialstate']['transient']['step'] = -2
+            elif time_s >= (cfg['run']['trialstate']['transient']['StartHoldStartTime'] + holddurations['start']):
+                cfg['run']['trialstate']['transient']['step'] = 0
 
 
-        if cfg['run']['trialstate']['transient']['step'] < 0:
+        if cfg['run']['trialstate']['transient']['step'] == 0:
             # PERIOD BEFORE CURSOR IS AT HOME
             # SPLIT FOR HOLD PERIODS... right now: only the go to home part
             if (home_cursor_distance <= home_radius):
@@ -600,27 +616,31 @@ def runTrial(cfg):
                 #print('entering step 4')
                 cfg['run']['trialstate']['transient']['step'] = 4
 
+
         if cfg['run']['trialstate']['transient']['step'] == 3:
             # this would be a HOLD at the target (skipping for now)
+            # the criteria should come from the trial-event sequence,
+            # and depend on the outward reach completion criterion (acquire target? home-cursor distance?)
+            # so not doing this right now... :(
             pass
 
         if cfg['run']['trialstate']['transient']['step'] == 4:
-            print('in step 4')
+            # print('in step 4')
             if (home_cursor_distance < home_radius):
-                print('switching to step 5')
+                # print('switching to step 5')
                 cfg['run']['trialstate']['transient']['step'] = 5
-                cfg['run']['trialstate']['transient']['homeFinishHoldStartTime']  =  copy.deepcopy(time_s)
+                cfg['run']['trialstate']['transient']['FinishHoldStartTime']  =  copy.deepcopy(time_s)
                 # back at home
 
         if cfg['run']['trialstate']['transient']['step'] == 5:
-            print('in step 5')
-            print('hold duration: %0.3f s'%(time_s - cfg['run']['trialstate']['transient']['homeFinishHoldStartTime']))
+            # print('in step 5')
+            # print('hold duration: %0.3f s'%(time_s - cfg['run']['trialstate']['transient']['FinishHoldStartTime']))
             if (home_cursor_distance > home_radius):
-                print('back to step 4...')
+                # print('back to step 4...')
                 cfg['run']['trialstate']['transient']['step'] = 4
-                #cfg['run']['trialstate']['transient']['homeFinishHoldStartTime']  =  time_s
-            elif time_s >= (cfg['run']['trialstate']['transient']['homeFinishHoldStartTime'] + homefinishholdduration):
-                step = 6 # not sure what this would do, maybe a blank screen, but for now we say:
+                #cfg['run']['trialstate']['transient']['FinishHoldStartTime']  =  time_s
+            elif time_s >= (cfg['run']['trialstate']['transient']['FinishHoldStartTime'] + holddurations['finish']):
+                cfg['run']['trialstate']['transient']['step'] = 6 # not sure what this would do, maybe a blank screen, but for now we say:
                 inprogress = False
 
 
@@ -1017,12 +1037,12 @@ def resetTransientTrialState(cfg):
     cfg['run']['trialstate']['transient']['out']  = False
     cfg['run']['trialstate']['transient']['back'] = False
 
-    cfg['run']['trialstate']['transient']['homeStartHoldStartTime']  =  0
-    cfg['run']['trialstate']['transient']['homeStartHoldFinished']   =  0
-    cfg['run']['trialstate']['transient']['homeFinishHoldStartTime'] =  0
-    cfg['run']['trialstate']['transient']['homeFinishHoldFinished']  =  0
+    cfg['run']['trialstate']['transient']['StartHoldStartTime']      =  0
+    # cfg['run']['trialstate']['transient']['StartHoldFinished']       =  0
+    cfg['run']['trialstate']['transient']['FinishHoldStartTime']     =  0
+    # cfg['run']['trialstate']['transient']['FinishHoldFinished']      =  0
     cfg['run']['trialstate']['transient']['targetHoldStartTime']     =  0
-    cfg['run']['trialstate']['transient']['targetHoldFinished']      =  0
+    # cfg['run']['trialstate']['transient']['targetHoldFinished']      =  0
     cfg['run']['trialstate']['transient']['step']                    = -3
 
     # cfg['run']['trialstate']['transient']
