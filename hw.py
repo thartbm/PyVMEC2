@@ -531,6 +531,8 @@ class tabletTracker:
             self.size_px = tracker['size_px']
         if ('offset_cm' in tracker.keys()):
             self.offset_cm = tracker['offset_cm']
+        else:
+            self.offset_cm = [0,0]
 
         # this SHOULD link the mouse/tablet to the window object
         # and use the units set for the window object
@@ -573,8 +575,8 @@ class tabletTracker:
     def getPos(self):
         [X,Y] = self.psymouse.getPos()
         tp = time()
-        X = X * self.xscale
-        Y = Y * self.yscale
+        X = (X * self.xscale) + self.offset_cm[0]
+        Y = (Y * self.yscale) + self.offset_cm[1]
         return( [X,Y, tp] )
 
 # cfg['settings']['devices']['tracker'] = {
