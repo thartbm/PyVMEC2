@@ -193,13 +193,17 @@ def addSuperTaskTrials(cfg, el):
     # prepare the subtask properties:
     # subtasks X properties
 
-    pro_dic = {} # an empty placeholder
+    pro_dic = {} # an empty placeholder for all properties that are varied across subtasks
     for k in el['properties'].keys():
         pro_dic[k] = []
 
-    subtask_properties = {}
+    # print(pro_dic)
+
+    subtask_properties = {} # properties dictionary for each subtask: the empty one just made
     for k in range(len(el['subtasks'])):
         subtask_properties[el['subtasks'][k]['name']] = copy.deepcopy(pro_dic)
+
+    # print(subtask_properties) # still empty?
 
 
     # list with property values to populate subtasks
@@ -313,8 +317,8 @@ def runTrialSequence(cfg):
 
     while cfg['run']['trialidx'] < len(cfg['run']['triallist']):
 
-        trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
-        trialtype = copy.deepcopy(trialdict['type'])
+        trialdict = copy.copy(cfg['run']['triallist'][cfg['run']['trialidx']])
+        trialtype = copy.copy(trialdict['type'])
 
         # IFF the pretrialscript key exists in the trial dictionary
         if ('pretrialscript' in trialdict.keys()):
@@ -328,13 +332,18 @@ def runTrialSequence(cfg):
 
                     #print(pretrialscript)
 
+                    # startPTSprep = time()
+
                     # fetch the binary version of the script:
                     code = cfg['bin']['scripts'][pretrialscript]
 
                     # get performance on previous trials:
                     performance = copy.deepcopy(cfg['run']['performance'])
                     # and the list of UPCOMING trials only
-                    triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                    # triallist   = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                    # deepcopy takes lots of time, especially on the biggest object:
+                    triallist   = copy.copy(cfg['run']['triallist'][cfg['run']['trialidx']:])
+                    # this is also the 1 object that we allow people to change, so we can just use 'copy' instead
                     # as well as the trialstate dictionary:
                     trialstate  = copy.deepcopy(cfg['run']['trialstate'])
                     # and the trialdict dictionary? this is actually in the triallist... for ALL upcoming trials
@@ -346,6 +355,10 @@ def runTrialSequence(cfg):
                     g['triallist']   = triallist
                     g['trialstate']  = trialstate
                     g['new_W_hat']   = 0
+
+                    # finishPTSprep = time()
+                    # print('%0.3f s preparing pre-trial script'%(finishPTSprep-startPTSprep))
+
                     # accompanied by an empty 'locals' dictionary
                     l = {}
                     # and it is executed
@@ -353,7 +366,7 @@ def runTrialSequence(cfg):
 
                     for check_key in l.keys():
                         if check_key == 'triallist':
-                            cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.deepcopy(l['triallist'])
+                            cfg['run']['triallist'][cfg['run']['trialidx']:] = copy.copy(l['triallist'])
                         if check_key == 'new_W_hat':
                             cfg['run']['new_W_hat'] = copy.deepcopy(l['new_W_hat'])
                         if check_key == 'trialstate':
@@ -371,8 +384,8 @@ def runTrialSequence(cfg):
             break
 
         print('EVENT:',cfg['run']['trialidx']+1,' / ', len(cfg['run']['triallist']))
-        trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
-        trialtype = copy.deepcopy(trialdict['type'])
+        trialdict = copy.copy(cfg['run']['triallist'][cfg['run']['trialidx']])
+        trialtype = copy.copy(trialdict['type'])
 
         if trialtype == 'trial':
 
@@ -383,11 +396,19 @@ def runTrialSequence(cfg):
 
             [cfg, trialdata] = runTrial(cfg=cfg)
 
+            # startSaveTrial = time()
+
             # SAVE TRIAL DATA as file
             saveTrialdata(cfg=cfg, trialdata=trialdata)
 
+            # finishSaveTrial = time()
+            # print('%0.3f s spent saving trial data'%(finishSaveTrial-startSaveTrial))
+
             # store stuff in performance as well
+            # startStorePerformance = time()
             cfg = storePerformance(cfg=cfg, trialdata=trialdata)
+            # finishStorePerformance = time()
+            # print('%0.3f s spent storing performance'%(finishStorePerformance-startStorePerformance))
 
         if trialtype == 'pause':
 
@@ -407,6 +428,8 @@ def runTrialSequence(cfg):
 
 
 def runTrial(cfg):
+
+    # startTrialSetup = time()
 
     trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
 
@@ -506,6 +529,9 @@ def runTrial(cfg):
 
     planned_events = []
 
+    # finishTrialSetup = time()
+    # print('time spent setting up trial: %0.1f s'%(finishTrialSetup-startTrialSetup))
+
     while inprogress:
 
         # visual feedback location depends on real location as well:
@@ -576,15 +602,17 @@ def runTrial(cfg):
             if (home_cursor_distance > home_radius):
                 cfg['run']['trialstate']['transient']['step'] = -2
             elif time_s >= (cfg['run']['trialstate']['transient']['StartHoldStartTime'] + holddurations['start']):
-                cfg['run']['trialstate']['transient']['step'] = 0
-
-
-        if cfg['run']['trialstate']['transient']['step'] == 0:
-            # PERIOD BEFORE CURSOR IS AT HOME
-            # SPLIT FOR HOLD PERIODS... right now: only the go to home part
-            if (home_cursor_distance <= home_radius):
+                # hold is completed, we move on to step 0, and that is "go time"
                 cfg['run']['trialstate']['transient']['step'] = 0
                 cfg['run']['trialstate']['transient']['gotime'] = time_s
+
+
+        # if cfg['run']['trialstate']['transient']['step'] == 0:
+        #     # PERIOD BEFORE CURSOR IS AT HOME
+        #     # SPLIT FOR HOLD PERIODS... right now: only the go to home part
+        #     if (home_cursor_distance <= home_radius):
+        #         cfg['run']['trialstate']['transient']['step'] = 0
+                
 
         if cfg['run']['trialstate']['transient']['step'] == 0:
             # AT HOME WITH TARGET PRESENTED... WAITING FOR REACTION
@@ -664,12 +692,16 @@ def runTrial(cfg):
         positions['cursor_pos'] = cursorPos
         positions['target_pos'] = targetPos
 
+        # startCFB = time()
         # check feedback rules:
         trialdict = checkFeedbackRules( cfg        = cfg,
                                         trialdict  = trialdict,
                                         trialdata  = trialdata,
                                         distances  = distances,
                                         positions  = positions  )
+        # finishCFB = time()
+        # print('time spent checking feedback-rules: %0.f s'%(finishCFB - startCFB))
+
 
         # see if anything needs to happen right now:
         [cfg, trialdict] = handleEvents( cfg            = cfg,

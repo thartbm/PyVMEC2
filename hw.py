@@ -575,8 +575,8 @@ class tabletTracker:
     def getPos(self):
         [X,Y] = self.psymouse.getPos()
         tp = time()
-        X = (X * self.xscale) + self.offset_cm[0]
-        Y = (Y * self.yscale) + self.offset_cm[1]
+        X = (X * self.xscale) - self.offset_cm[0]
+        Y = (Y * self.yscale) - self.offset_cm[1]
         return( [X,Y, tp] )
 
 # cfg['settings']['devices']['tracker'] = {
