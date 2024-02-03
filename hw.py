@@ -455,6 +455,26 @@ class monitorDisplay:
             self.pausecountdown.pos = pos
         self.pausecountdown.draw()
 
+    
+    def setProperties(self, propdict):
+        
+        references = {'cursor'          : self.cursor,
+                      'home'            : self.home,
+                      'target'          : self.target,
+                      'target_imprint'  : self.target_imprint,
+                      'cursor_imprint'  : self.cursor_imprint,
+                      'target_arc'      : self.target_arc}
+
+        if propdict['stimulus'] in references.keys():
+            refered = references[propdict['stimulus']]
+        else:
+            return
+
+        if propdict['property'] == 'fillColor':
+            refered.fillColor = propdict['value']
+        if propdict['property'] == 'lineColor':
+            refered.lineColor = propdict['value']
+
 
     def doFrame(self): # THIS WILL GET THE TRIAL STATE DICTIONARY !!!!
         

@@ -1134,23 +1134,29 @@ def checkTimeTrigger(trigger):
 
 def implementEventEffect(event, cfg, trialdict):
 
-    effect = event['effect']
+    for effect in event['effects']:
 
-    if effect['type'] == 'transient-state':
-        if effect['delay'] == 0:
-            # we implement the effect right away
-            for param in effect['parameters'].keys():
-                cfg['run']['trialstate']['transient'][param] = effect['parameters'][param]
-        else:
-            # we add the effect as a timed effect to the event list
-            new_event = copy.deepcopy(event)
-            new_event['property']        = 'time'
-            new_event['value']           = time() + effect['delay']
-            new_event['effect']['delay'] = 0
-            trialdict['events'] += [new_event]
+        if effect['type'] == 'transient-state':
+            if effect['delay'] == 0:
+                # we implement the effect right away
+                for param in effect['parameters'].keys():
+                    cfg['run']['trialstate']['transient'][param] = effect['parameters'][param]
+            else:
+                # we add the effect as a timed effect to the event list
+                new_event = copy.deepcopy(event)
+                # print(event['effects'])
+                new_event['property']        = 'time'
+                new_event['value']           = time() + effect['delay']
+                new_event['effects']['delay'] = 0
+                trialdict['events'] += [new_event]
 
-    if effect['type'] == 'sound':
-        cfg['hw']['sounds'][effect['file']].play()
+        if effect['type'] == 'sound':
+            cfg['hw']['sounds'][effect['file']].play()
+
+        if effect['type'] == 'stimulus-properties':
+            for propdict in effect['changes']:
+                # print(propdict)
+                cfg['hw']['display'].setProperties(propdict)
 
     return(trialdict)
 
@@ -1225,27 +1231,27 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
                     cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
                     new_events += [ {'trigger' : {'type'      : 'time',
                                                 'value'     :  onset},
-                                    'effect' : { 'type'       : 'transient-state',
+                                    'effects' : [{ 'type'       : 'transient-state',
                                                 'delay'      : 0,
-                                                'parameters' : {'showImprintCursor' : True}}},
+                                                'parameters' : {'showImprintCursor' : True}}]},
                                     {'trigger' : {'type'      : 'time',
                                                 'value'     :  offset},
-                                    'effect' : { 'type'       : 'transient-state',
+                                    'effects' : [{ 'type'       : 'transient-state',
                                                 'delay'      : 0,
-                                                'parameters' : {'showImprintCursor' : False}}} ]             
+                                                'parameters' : {'showImprintCursor' : False}}]} ]             
                 if value == 'target':
                     cfg['run']['trialstate']['transient']['imprintTargetPos'] = positions['target_pos']
                     cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
                     new_events += [ {'trigger' : {'type'      : 'time',
                                                 'value'     :  onset},
-                                    'effect' : { 'type'       : 'transient-state',
+                                    'effects' : [{ 'type'       : 'transient-state',
                                                 'delay'      : 0,
-                                                'parameters' : {'showImprintTarget' : True}}},
+                                                'parameters' : {'showImprintTarget' : True}}]},
                                     {'trigger' : {'type'      : 'time',
                                                 'value'     :  offset},
-                                    'effect' : { 'type'       : 'transient-state',
+                                    'effects' : [{ 'type'       : 'transient-state',
                                                 'delay'      : 0,
-                                                'parameters' : {'showImprintTarget' : False}}} ] 
+                                                'parameters' : {'showImprintTarget' : False}}]} ] 
                     
             if fb_type == 'sound':
                 
@@ -1253,7 +1259,7 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
                     onset = time() + fb[fb_type]['event']['delay']
                     
                     new_events += [ {'trigger' : {'type' : 'time', 'value': onset},
-                                     'effect'  : {'type' : 'sound', 'file' : value}} ]
+                                     'effects'  : [{'type' : 'sound', 'file' : value}]} ]
                 #print(new_events[-1])
 
                 
