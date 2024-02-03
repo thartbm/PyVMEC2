@@ -294,7 +294,7 @@ def runTrialSequence(cfg):
     performance['label']              = []
     performance['targetangle_deg']    = []
     performance['rotation']           = []
-    performance['errorgain']          = []
+    performance['handerrorgain']      = []
     performance['feedbacktype']       = []
     performance['reachdeviation_deg'] = []
     performance['reactiontime_s']     = []
@@ -455,12 +455,12 @@ def runTrial(cfg):
         trialdict['cursorerrorgain'] = 1
         cursorerrorgain = 1
     
-    # 2: error gains:
-    if 'errorgain' in trialdict.keys():
-        errorgain = trialdict['errorgain']
+    # 2: hand error gains:
+    if 'handerrorgain' in trialdict.keys():
+        handerrorgain = trialdict['handerrorgain']
     else:
-        trialdict['errorgain'] = 1
-        errorgain = 1
+        trialdict['handerrorgain'] = 1
+        handerrorgain = 1
     
     # 3: distance gains:
     distancegain = 1 # NO USE FOR THIS YET: IMPLEMENT LATER
@@ -556,12 +556,12 @@ def runTrial(cfg):
             cursorPos = [(relX * math.cos(targetangle_rad)) - (relY * math.sin(targetangle_rad)),
                                  (relX * math.sin(targetangle_rad)) + (relY * math.cos(targetangle_rad))]
 
-        if (cursorerrorgain != 1) and (not clamped):
+        if (handerrorgain != 1) and (not clamped):
             relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
             unrot = -1 * targetangle_rad
             relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
                                  (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
-            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * cursorerrorgain
+            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * handerrorgain
 
             cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
                          (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
@@ -576,15 +576,15 @@ def runTrial(cfg):
             cursorPos = [(math.cos(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[0],
                          (math.sin(targetangle_rad + relativeCursorRad + rotation_rad) * home_cursor_distance) + homePos[1]]
 
-        # if (errorgain != 1) and (not clamped):
-        #     relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
-        #     unrot = -1 * targetangle_rad
-        #     relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
-        #                          (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
-        #     relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * errorgain
+        if (cursorerrorgain != 1) and (not clamped):
+            relX, relY = cursorPos[0] - homePos[0], cursorPos[1] - homePos[1]
+            unrot = -1 * targetangle_rad
+            relativeCursorPos = [(relX * math.cos(unrot)) - (relY * math.sin(unrot)),
+                                 (relX * math.sin(unrot)) + (relY * math.cos(unrot))]
+            relativeCursorRad = math.atan2(relativeCursorPos[1], relativeCursorPos[0]) * cursorerrorgain
 
-        #     cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
-        #                  (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
+            cursorPos = [(math.cos(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[0],
+                         (math.sin(targetangle_rad + relativeCursorRad) * home_cursor_distance) + homePos[1]]
 
         
         # recalculate distances with updated positions:
@@ -892,7 +892,7 @@ def storePerformance(cfg, trialdata):
 
     cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
     cfg['run']['performance']['rotation'].append(trialdata['rotation'])
-    cfg['run']['performance']['errorgain'].append(trialdata['errorgain'])
+    cfg['run']['performance']['handerrorgain'].append(trialdata['handerrorgain'])
     cfg['run']['performance']['cursorerrorgain'].append(trialdata['cursorerrorgain'])
     cfg['run']['performance']['feedbacktype'].append(trialdata['cursor'])
 
