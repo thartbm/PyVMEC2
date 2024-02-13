@@ -330,6 +330,15 @@ class monitorDisplay:
                                       end = stimuli['target_arc']['end'],
                                       pos = self.off_pos )
 
+        self.aiming_arrow =  visual.ShapeStim( win        = self.win, 
+                                               lineWidth  = stimuli['aiming_arrow']['lineWidth'],
+                                               lineColor  = stimuli['aiming_arrow']['lineColor'],
+                                               fillColor  = stimuli['aiming_arrow']['fillColor'],
+                                               vertices   = stimuli['aiming_arrow']['vertices'],
+                                               closeShape = stimuli['aiming_arrow']['closeShape'], 
+                                               size       = stimuli['aiming_arrow']['size'] )
+
+
         # self.cursor_arc = visual.Pie( win = self.win,
         #                               edges = stimuli['cursor_arc']['edges'],
         #                               lineWidth = stimuli['cursor_arc']['lineWidth'],
@@ -434,6 +443,14 @@ class monitorDisplay:
         self.target_imprint.pos = targetImprintPos
         self.target_imprint.draw()
 
+    def showAimingarrow(self, aimingArrowPos=None, aimingArrowOri=None):
+        if aimingArrowOri != None:
+            self.aiming_arrow.ori = aimingArrowOri
+        if aimingArrowPos != None:
+            self.aiming_arrow.pos = aimingArrowPos
+        self.aiming_arrow.draw()
+        
+
     def showPointsCounter(self, points, pos=None):
         txt = '%d'%points
         self.pointscounter.setText(text = txt)
@@ -490,6 +507,8 @@ class monitorDisplay:
         self.target.pos = self.off_pos
         self.cursor.pos = self.off_pos
         self.cursor_imprint.pos = self.off_pos
+        self.target_arc.pos = self.off_pos
+        self.aiming_arrow.pos = self.off_pos
 
 
     def shutDown(self):

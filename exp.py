@@ -109,7 +109,9 @@ def getTrialSequence(cfg):
 
             cfg = addTaskTrials(cfg=cfg, el=el)
 
+        if el['type'] == 'aiming':
 
+            cfg = addAimingTrials(cfg=cfg, el=el)
 
 
         if el['type'] == 'supertask':
@@ -179,6 +181,62 @@ def addTaskTrials(cfg, el):
                 del thistrial[k]
 
         thistrial['type'] = 'trial'
+
+        cfg['run']['triallist'] += [thistrial]
+
+    return(cfg)
+
+def addAimingTrials(cfg, el):
+
+    # print('placeholder function: addAimingTrials()\n no aiming trials added!')
+
+    # print(el)
+
+    task = el
+
+    var_prop_names = []
+    if 'order' in task.keys():
+        for p in task.keys():
+            if isinstance(task[p], list) & (p in task['order'].keys()):
+                var_prop_names.append(p)
+
+    variable_properties = {}
+    for vpn in var_prop_names:
+        variable_properties[vpn] = []
+        nblocks = int(math.ceil(task['trials'] / len(task[vpn])))
+        for block in range(nblocks):
+            values = copy.deepcopy(task[vpn])
+            if task['order'][vpn] == 'pseudorandom':
+                random.shuffle(values)
+            variable_properties[vpn] += values
+        variable_properties[vpn] = variable_properties[vpn][:task['trials']]
+        if task['order'][vpn] == 'random':
+            random.shuffle(variable_properties[vpn])
+
+    # make the basic trial template:
+    trial = copy.deepcopy(task)
+    # strippedtask = copy.deepcopy(task)
+    remove_entries = var_prop_names + ['order']
+    for k in remove_entries:
+        trial.pop(k, None)
+    # trial.update(strippedtask)
+
+    # psedurandomize in blocks:
+    for trialno in range(task['trials']):
+
+        # else: get a trial to add to the list:
+        thistrial = copy.deepcopy(trial)
+        for vpn in var_prop_names:
+            thistrial[vpn] = variable_properties[vpn][trialno]
+
+        unkeys = ['trials']
+        for k in unkeys:
+            if (k in thistrial.keys()):
+                del thistrial[k]
+
+        thistrial['type'] = 'aiming'
+
+        # print(thistrial)
 
         cfg['run']['triallist'] += [thistrial]
 
@@ -306,10 +364,18 @@ def runTrialSequence(cfg):
 
     cfg['run']['new_W_hat'] = 0
 
-
     cfg['run']['performance'] = performance
 
-    print(cfg['run']['performance'])
+    # print(cfg['run']['performance'])
+
+    aiming = {}
+    aiming['targetangle_deg']    = []
+    aiming['arrowoffset_deg']    = []
+    aiming['arrowdeviation_deg'] = []
+    aiming['steps']              = []
+    aiming['completiontime_s']   = []
+
+    cfg['run']['aiming'] = aiming
 
     # points are in here:
     cfg = initializeTrialState(cfg)
@@ -414,6 +480,10 @@ def runTrialSequence(cfg):
 
             cfg = runPause(cfg=cfg)
 
+        if trialtype == 'aiming':
+
+            cfg = runAiming(cfg=cfg)
+
         # this has to be at the very end!
         cfg['run']['trialidx'] +=1
 
@@ -421,6 +491,8 @@ def runTrialSequence(cfg):
         saveState(cfg) # should this be called "saveState()" ?
     
     savePerformance(cfg) # shorthand data... might be sufficient for some analyses?
+
+    saveAiming(cfg)
 
     cfg['hw']['display'].shutDown()
 
@@ -844,6 +916,14 @@ def runPause(cfg):
 
     return(cfg)
 
+def runAiming(cfg):
+
+    trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
+
+    print(trialdict)
+
+    return(cfg)
+
 def saveTrialdata(cfg, trialdata):
 
     # get path from cfg
@@ -948,6 +1028,12 @@ def savePerformance(cfg):
     header = ','.join(performance.keys())
 
     np.savetxt(filename, performance_array, delimiter=',', header=header, fmt='%s', comments="")
+
+    return
+
+def saveAiming(cfg):
+
+    print('placeholder function: saveAiming() - nothing saved!')
 
     return
 
