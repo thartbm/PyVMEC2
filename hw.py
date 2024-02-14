@@ -7,6 +7,10 @@ import screeninfo, copy, os, glob
 from time import time
 
 
+from psychopy.hardware import keyboard
+from pyglet.window import key
+
+
 
 # let's try using the psychopy IOHUB server system
 # this will allow better time-resolution for trajectory recording at least
@@ -260,7 +264,14 @@ class monitorDisplay:
             self.target_radius = (stimuli['target']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
             self.cursor_radius = (stimuli['cursor']['radius_cm'] / cfg['settings']['basictrial']['targetdistance_cm']) * cfg['settings']['basictrial']['targetdistance_norm']
 
-        cfg['hw']['win'] = self.win
+        self.pyg_keyboard = key.KeyStateHandler()
+        self.win.winHandle.push_handlers(self.pyg_keyboard)
+        
+        cfg['hw']['win']    = self.win
+        cfg['hw']['pyglet'] = {'keyboard' : self.pyg_keyboard,
+                               'key'      : key }
+
+
 
 
 

@@ -5,6 +5,9 @@ from scipy import optimize
 from time import time
 from psychopy import event
 
+# from psychopy.hardware import keyboard
+# from pyglet.window import key
+
 # to make the scripts leaner, we should use numpy and homebrew for saving csvs, but:
 #import pandas as pd
 
@@ -920,7 +923,58 @@ def runAiming(cfg):
 
     trialdict = copy.deepcopy(cfg['run']['triallist'][cfg['run']['trialidx']])
 
-    print(trialdict)
+    # print(trialdict)
+
+    pyglet_kb = cfg['hw']['pyglet']['keyboard']
+    key       = cfg['hw']['pyglet']['key']
+
+
+    targetangle_deg = trialdict['target']
+    arrowoffset_deg = trialdict['offset']
+
+    targetPos = getTargetPos(cfg)
+
+    # ori = targetangle_deg + arrowoffset_deg
+    pos = cfg['settings']['basictrial']['home'] # should this be an option to set in aiming trials as well? YES!!!
+
+    starttime = time()
+    steps = 0
+
+    inprogress = True
+
+    while inprogress:
+
+        # show target
+        cfg['hw']['display'].showTarget(targetPos)
+        cfg['hw']['display'].showAimingarrow(aimingArrowPos=pos, aimingArrowOri=-1*((targetangle_deg + arrowoffset_deg)))
+        cfg['hw']['display'].doFrame()
+
+        k = event.getKeys(['up', 'left', 'right', 'w', 'a', 'd', 'space'])
+        if k:
+            if k[0] in ['up', 'w', 'space']:
+                # CHECK CRITERIA ! ! ! ! ! !
+                inprogress = False
+                if 'required' in trialdict.keys():
+                    if 'steps' in trialdict['required']:
+                        if steps < trialdict['required']['steps']:
+                            inprogress = True
+                    if 'time' in trialdict['required']:
+                        if (time()-starttime) < trialdict['required']['time']:
+                            inprogress = True
+        
+        if any([pyglet_kb[key.LEFT], pyglet_kb[key.A]]):
+            arrowoffset_deg += trialdict['stepsize']
+            steps += 1
+        if any([pyglet_kb[key.RIGHT], pyglet_kb[key.D]]):
+            arrowoffset_deg -= trialdict['stepsize']
+            steps += 1
+        
+
+    cfg['run']['aiming']['targetangle_deg'].append(targetangle_deg)
+    cfg['run']['aiming']['arrowoffset_deg'].append(trialdict['offset'])
+    cfg['run']['aiming']['arrowdeviation_deg'].append(arrowoffset_deg)
+    cfg['run']['aiming']['steps'].append(steps)
+    cfg['run']['aiming']['completiontime_s'].append(time() - starttime)
 
     return(cfg)
 
@@ -1033,8 +1087,19 @@ def savePerformance(cfg):
 
 def saveAiming(cfg):
 
-    print('placeholder function: saveAiming() - nothing saved!')
+    aiming = cfg['run']['aiming']
 
+    if len(aiming['targetangle_deg']) == 0:
+        return # do not save empty array
+    
+    aiming_array = np.array(tuple(aiming.values())).T
+
+    filename = '%s%s_aiming.csv'%(cfg['run']['path'], cfg['run']['participant'])
+
+    header = ','.join(aiming.keys())
+
+    np.savetxt(filename, aiming_array, delimiter=',', header=header, fmt='%s', comments="")
+    
     return
 
 
