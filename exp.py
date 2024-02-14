@@ -364,6 +364,7 @@ def runTrialSequence(cfg):
     performance['cursorerrorgain']    = []
     performance['trialstarttime_s']   = []
     performance['W_hat']              = []
+    performance['event_idx']          = []
 
     cfg['run']['new_W_hat'] = 0
 
@@ -377,6 +378,7 @@ def runTrialSequence(cfg):
     aiming['arrowdeviation_deg'] = []
     aiming['steps']              = []
     aiming['completiontime_s']   = []
+    aiming['event_idx']          = []
 
     cfg['run']['aiming'] = aiming
 
@@ -975,6 +977,7 @@ def runAiming(cfg):
     cfg['run']['aiming']['arrowdeviation_deg'].append(arrowoffset_deg)
     cfg['run']['aiming']['steps'].append(steps)
     cfg['run']['aiming']['completiontime_s'].append(time() - starttime)
+    cfg['run']['aiming']['event_idx'].append(cfg['run']['trialidx'])
 
     return(cfg)
 
@@ -1022,6 +1025,8 @@ def storePerformance(cfg, trialdata):
         cfg['run']['performance']['label'].append('__nolabel__')
 
     # does this work?
+    cfg['run']['performance']['event_idx'].append(cfg['run']['trialidx'])
+
     cfg['run']['performance']['trialstarttime_s'].append(cfg['run']['trialstate']['transient']['trialstarttime'])
 
     cfg['run']['performance']['targetangle_deg'].append(trialdata['target'])
