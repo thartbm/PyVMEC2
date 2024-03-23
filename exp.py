@@ -1454,6 +1454,15 @@ def testAccuracy(test, positions, distances):
 
     if test['testvariable'] in ['home_cursor_distance', 'target_cursor_distance', 'home_target_distance']:
         value = distances[test['testvariable']]
+    if test['testvariable'] in ['target_home_cursor_angle']:
+        hp = np.array(positions['home_pos'])
+        cp = np.array(positions['cursor_pos']) - hp
+        tp = np.array(positions['target_pos']) - hp
+        ta = -1 * np.arctan2(tp[1], tp[0])
+        R = np.array([[np.cos(ta), -1*np.sin(ta)],[np.sin(ta),np.cos(ta)]])
+        [x,y] = R @ cp.T
+        reachdev = ((np.arctan2(y,x)/np.pi)*180)
+        value = abs(reachdev)
 
     if value >= test['testrange'][0] and value <= test['testrange'][1]:
         return(True)
