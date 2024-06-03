@@ -509,27 +509,46 @@ class monitorDisplay:
 
     def switchObjects(self, cfg, objdict):
 
-        references = {'cursor'          : self.cursor # not sure I want to do the other stuff yet...
-                    #   'home'            : self.home,
-                    #   'target'          : self.target,
-                    #   'target_imprint'  : self.target_imprint,
-                    #   'cursor_imprint'  : self.cursor_imprint,
-                    #   'target_arc'      : self.target_arc
-                      }
+        # references = {'cursor'          : self.cursor # not sure I want to do the other stuff yet...
+        #             #   'home'            : self.home,
+        #             #   'target'          : self.target,
+        #             #   'target_imprint'  : self.target_imprint,
+        #             #   'cursor_imprint'  : self.cursor_imprint,
+        #             #   'target_arc'      : self.target_arc
+        #               }
 
-        if objdict['stimulus'] in references.keys():
-            refered = references[objdict['stimulus']]
+        # if objdict['stimulus'] in references.keys():
+        #     refered = references[objdict['stimulus']]
+        # else:
+        #     # print('stimulus not in reference objects')
+        #     return
         
-        if objdict['object'] == 'default':
-            size = refered.size
-            refered = self.default_cursor
-            refered.size = size
+        # # print('switching to:')
+        # # print(objdict['object'])
+        # if objdict['object'] == 'default':
+        #     size = refered.size
+        #     refered = self.default_cursor
+        #     refered.size = size
         
-        if objdict['object'] == 'image':
-            if objdict['image'] in cfg['hw']['images']:
-                size = refered.size
-                refered = cfg['hw']['images'][objdict['image']]
-                refered.size = size
+        # if objdict['object'] == 'image':
+        #     if objdict['image'] in cfg['hw']['images']:
+        #         print('    (' + objdict['image'] + ')')
+        #         size = refered.size
+        #         refered = cfg['hw']['images'][objdict['image']]
+        #         refered.size = size
+
+        # because stim objects are built-in, they are not as easily switched out as properties of them:
+
+        if objdict['stimulus'] == 'cursor':
+            # size = copy.deepcopy(self.cursor.size)
+            size = cfg['settings']['stimuli']['cursor']["radius_cm"] * 2
+            if objdict['object'] == 'default':
+                self.cursor = self.default_cursor
+                self.cursor.size = size
+            if objdict['object'] == 'image':
+                if objdict['image'] in cfg['hw']['images']:
+                    self.cursor = cfg['hw']['images'][objdict['image']]
+                    self.cursor.size = size
 
 
 

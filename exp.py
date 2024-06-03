@@ -1317,6 +1317,7 @@ def implementEventEffect(event, cfg, trialdict):
         if effect['type'] == 'stimulus-objects':
             # only cursor for now?
             for objdict in effect['changes']:
+                print('switching objects?')
                 cfg['hw']['display'].switchObjects(cfg, objdict)
                 
 
