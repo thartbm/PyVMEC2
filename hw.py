@@ -76,6 +76,8 @@ def setupHardware(cfg):
     # in case there are any 'wav' files in the resources folder
     # they are added as playable sound objects to the cfg
     cfg = addSounds(cfg)
+    # same for png images
+    cfg = addImages(cfg)
 
     # cfg = addMovies(cfg) #? some day...
 
@@ -305,13 +307,15 @@ class monitorDisplay:
                                      radius = self.target_radius,
                                      pos = self.off_pos)
 
-        self.cursor = visual.Circle( win = self.win,
-                                     edges = stimuli['cursor']['edges'],
-                                     lineWidth = stimuli['cursor']['lineWidth'],
-                                     lineColor = stimuli['cursor']['lineColor'],
-                                     fillColor = stimuli['cursor']['fillColor'],
-                                     radius = self.cursor_radius,
-                                     pos = self.off_pos)
+        self.default_cursor = visual.Circle( win = self.win,
+                                        edges = stimuli['cursor']['edges'],
+                                        lineWidth = stimuli['cursor']['lineWidth'],
+                                        lineColor = stimuli['cursor']['lineColor'],
+                                        fillColor = stimuli['cursor']['fillColor'],
+                                        radius = self.cursor_radius,
+                                        pos = self.off_pos)
+
+        self.cursor = self.default_cursor
 
         self.cursor_imprint = visual.Circle( win = self.win,
                                              edges = stimuli['cursor_imprint']['edges'],
@@ -650,6 +654,22 @@ def addSounds(cfg):
             cfg['hw']['sounds'][sound_name] = sound.Sound(wav_file)
     #sound.Sound('short_tick.wav', sampleRate=44100)
 
+    return(cfg)
+
+def addImages(cfg):
+
+    png_files = glob.glob('experiments/%s/resources/images/*.png'%(cfg['run']['experiment']), recursive=False)
+
+    if (len(png_files)):
+        cfg['hw']['images'] = {}
+        for png_file in png_files:
+            file_name = os.path.basename(png_file)
+            image_name = os.path.splitext(file_name)[0]
+            cfg['hw']['images'][image_name] = visual.ImageStim( win       = cfg['hw']['win'],
+                                                                image     = png_file,
+                                                                flipHoriz = cfg['settings']['devices']['display']['text_flips'][0],
+                                                                flipVert  = cfg['settings']['devices']['display']['text_flips'][1])
+    # size and position of images needs to be set elsewhere
     return(cfg)
 
 

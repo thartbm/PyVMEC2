@@ -1314,6 +1314,9 @@ def implementEventEffect(event, cfg, trialdict):
                 # print(propdict)
                 cfg['hw']['display'].setProperties(propdict)
 
+        if effect['type'] == 'stimulus-object':
+            pass
+
     return(trialdict)
 
 def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
