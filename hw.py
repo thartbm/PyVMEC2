@@ -507,6 +507,31 @@ class monitorDisplay:
         if propdict['property'] == 'lineColor':
             refered.lineColor = propdict['value']
 
+    def switchObjects(self, objdict):
+
+        references = {'cursor'          : self.cursor # not sure I want to do the other stuff yet...
+                    #   'home'            : self.home,
+                    #   'target'          : self.target,
+                    #   'target_imprint'  : self.target_imprint,
+                    #   'cursor_imprint'  : self.cursor_imprint,
+                    #   'target_arc'      : self.target_arc
+                      }
+
+        if objdict['stimulus'] in references.keys():
+            refered = references[propdict['stimulus']]
+        
+        if objdict['object'] == 'default':
+            size = refered.size
+            refered = self.default_cursor
+            refered.size = size
+        
+        if objdict['object'] == 'image':
+            if objdict['image'] in cfg['hw']['images']:
+                size = refered.size
+                refered = cfg['hw']['images'][objdict['image']
+                refered.size = size]
+
+
 
     def doFrame(self): # THIS WILL GET THE TRIAL STATE DICTIONARY !!!!
         
