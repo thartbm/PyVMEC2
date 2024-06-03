@@ -507,7 +507,7 @@ class monitorDisplay:
         if propdict['property'] == 'lineColor':
             refered.lineColor = propdict['value']
 
-    def switchObjects(self, objdict):
+    def switchObjects(self, cfg, objdict):
 
         references = {'cursor'          : self.cursor # not sure I want to do the other stuff yet...
                     #   'home'            : self.home,
@@ -518,7 +518,7 @@ class monitorDisplay:
                       }
 
         if objdict['stimulus'] in references.keys():
-            refered = references[propdict['stimulus']]
+            refered = references[objdict['stimulus']]
         
         if objdict['object'] == 'default':
             size = refered.size
@@ -528,8 +528,8 @@ class monitorDisplay:
         if objdict['object'] == 'image':
             if objdict['image'] in cfg['hw']['images']:
                 size = refered.size
-                refered = cfg['hw']['images'][objdict['image']
-                refered.size = size]
+                refered = cfg['hw']['images'][objdict['image']]
+                refered.size = size
 
 
 
