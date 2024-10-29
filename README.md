@@ -26,7 +26,14 @@ if [ -d "$HOME/.pyenv" ] ; then
 fi
 ```
 
-And reload your profile (e.g. `$ . ~/.profile`). You now have pyenv installed, so there should be two new folders at the start of your `$PATH`:
+You also want to set the LD_LIBRARY_PATH in one way or another. This could be done at the start of any experiment / code, this would give some more flexibility, but it's easier to forget. Or it could also be added to the profile file:
+
+```
+# link personal library:
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.pyenv/versions/3.8.10/lib/python3.8/site-packages/wx
+```
+
+Now reload your profile (e.g. `$ . ~/.profile`) so that these paths are added to the shell environment. You now have pyenv installed, so there should be two new folders at the start of your `$PATH`:
 
 ```
 $ echo $PATH
