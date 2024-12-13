@@ -13,7 +13,6 @@ from psychopy import event
 
 def runExperiment(experiment, participant):
 
-
 # FROM: https://discourse.psychopy.org/t/keypress-using-event-watikeys-not-working-until-after-mouse-click/9288
 
 # # Kill switch for Psychopy3 
@@ -247,30 +246,43 @@ def addAimingTrials(cfg, el):
 
 def addSuperTaskTrials(cfg, el):
 
-    nsubtasks = len(el['subtasks'])
-    nproperties = len(el['properties'])
-    nrepeats = el['repeats']
+    # nsubtasks = len(el['subtasks'])
+    # nproperties = len(el['properties'])
+    # nrepeats = el['repeats']
 
     # prepare the subtask properties:
     # subtasks X properties
 
-    pro_dic = {} # an empty placeholder for all properties that are varied across subtasks
+
+    # these are all the properties we need to assign:
+    # pro_dic = {}
+    prop_orders = {}
+
+    for gr_no in range(len(el['linkedproperties'])):
+        gr = el['linkedproperties'][gr_no]
+        prop_orders[gr_no] = []
+
+
+        # these are all the properties that we need to assign:
+    pro_dic = {} 
     for k in el['properties'].keys():
         pro_dic[k] = []
 
-    # print(pro_dic)
-
-    subtask_properties = {} # properties dictionary for each subtask: the empty one just made
+    # and we need to assign them to each sub-task:
+    subtask_properties = {} 
     for k in range(len(el['subtasks'])):
         subtask_properties[el['subtasks'][k]['name']] = copy.deepcopy(pro_dic)
-
-    # print(subtask_properties) # still empty?
 
 
     # list with property values to populate subtasks
     # this will be refilled when empty while
     # looping through repeats of subtasks
     prop_vals = copy.deepcopy(subtask_properties)
+
+    # now we use:
+    # - prop_vals, and
+    # - prop_orders
+    # to assign values of properties to each subtask on each repeat
 
     # add trials to triallist:
     for repeat in range(el['repeats']):
@@ -280,7 +292,20 @@ def addSuperTaskTrials(cfg, el):
         if el['taskorder'] == 'pseudorandom':
             random.shuffle(taskorder)
 
-        for task_idx in range(len(el['subtasks'])):
+        # set property orders in all property groups:
+        for property_group_no in range(len(el['linkedproperties'])):
+            
+            property_group = el['linkedproperties'][property_group_no]
+
+            if len(prop_orders[property_group_no]) == 0:
+                pk = list(property_group['values'].keys())[0]
+                temp_order = list(range(len(property_group['values'][pk][0])))
+                if property_group['order'] == 'pseudorandom':
+                    random.shuffle(temp_order)
+                prop_orders[property_group_no] = temp_order
+
+        # 
+        for task_idx in taskorder:
             task_name = el['subtasks'][task_idx]['name']
 
             # set up a sub-task instance:
@@ -288,31 +313,117 @@ def addSuperTaskTrials(cfg, el):
 
             # populate it with the variable properties:
             for property in el['properties'].keys():
-                #print(property)
                 if len(prop_vals[task_name][property]) == 0:
                     temp_vals = copy.deepcopy(el['properties'][property]['values'][task_idx])
                     if el['properties'][property]['order'] == 'pseudorandom':
                         random.shuffle(temp_vals)
                     prop_vals[task_name][property] = temp_vals
 
-                #print(task_name, property)
                 app_val = prop_vals[task_name][property].pop(0)
                 subtask_properties[task_name][property] += [app_val]
 
                 subtask[property] = subtask_properties[task_name][property].pop(0)
 
+
+            # now get the subtask its linked properties:
+            for property_group_no in range(len(el['linkedproperties'])):
+                property_group = el['linkedproperties'][property_group_no]
+                for prop in property_group['values'].keys():
+                    prop_val = property_group['values'][prop][task_idx][prop_orders[property_group_no][0]]
+                    subtask[prop] = prop_val
+
+
+
+
             # now the subtask could be handed to addTaskTrials?
             if subtask['type'] == 'task':
                 cfg = addTaskTrials( el = subtask,
-                                     cfg = cfg )
+                                    cfg = cfg )
+
+            if subtask['type'] == 'aiming':
+                cfg = addAimingTrials( el = subtask,
+                                    cfg = cfg )
             
             if subtask['type'] == 'pause':
                 cfg = addPauseTask( cfg = cfg,
                                     el = subtask )
 
-    #print(subtask_properties)
+
+        # remove property value indices we just used:
+        for property_group_no in range(len(el['linkedproperties'])):
+            prop_orders[property_group_no].pop(0)
+
 
     return(cfg)
+
+# def addSuperTaskTrials(cfg, el):
+
+#     nsubtasks = len(el['subtasks'])
+#     nproperties = len(el['properties'])
+#     nrepeats = el['repeats']
+
+#     # prepare the subtask properties:
+#     # subtasks X properties
+
+#     pro_dic = {} # an empty placeholder for all properties that are varied across subtasks
+#     for k in el['properties'].keys():
+#         pro_dic[k] = []
+
+#     # print(pro_dic)
+
+#     subtask_properties = {} # properties dictionary for each subtask: the empty one just made
+#     for k in range(len(el['subtasks'])):
+#         subtask_properties[el['subtasks'][k]['name']] = copy.deepcopy(pro_dic)
+
+#     # print(subtask_properties) # still empty?
+
+
+#     # list with property values to populate subtasks
+#     # this will be refilled when empty while
+#     # looping through repeats of subtasks
+#     prop_vals = copy.deepcopy(subtask_properties)
+
+#     # add trials to triallist:
+#     for repeat in range(el['repeats']):
+
+#         # determine task order:
+#         taskorder = range(len(el['subtasks']))
+#         if el['taskorder'] == 'pseudorandom':
+#             random.shuffle(taskorder)
+
+#         for task_idx in range(len(el['subtasks'])):
+#             task_name = el['subtasks'][task_idx]['name']
+
+#             # set up a sub-task instance:
+#             subtask = copy.deepcopy(el['subtasks'][task_idx])
+
+#             # populate it with the variable properties:
+#             for property in el['properties'].keys():
+#                 #print(property)
+#                 if len(prop_vals[task_name][property]) == 0:
+#                     temp_vals = copy.deepcopy(el['properties'][property]['values'][task_idx])
+#                     if el['properties'][property]['order'] == 'pseudorandom':
+#                         random.shuffle(temp_vals)
+#                     prop_vals[task_name][property] = temp_vals
+
+#                 #print(task_name, property)
+#                 app_val = prop_vals[task_name][property].pop(0)
+#                 subtask_properties[task_name][property] += [app_val]
+
+#                 subtask[property] = subtask_properties[task_name][property].pop(0)
+
+#             # now the subtask could be handed to addTaskTrials?
+#             if subtask['type'] == 'task':
+#                 cfg = addTaskTrials( el = subtask,
+#                                      cfg = cfg )
+            
+#             if subtask['type'] == 'pause':
+#                 cfg = addPauseTask( cfg = cfg,
+#                                     el = subtask )
+
+#     #print(subtask_properties)
+
+#     return(cfg)
 
 def addPauseTask(cfg, el):
 
