@@ -1401,6 +1401,10 @@ def checkTimeTrigger(trigger):
 
 def implementEventEffect(event, cfg, trialdict):
 
+
+    if not(isinstance(event['effects'],list)):
+        event['effects'] = list(event['effects'])
+
     for effect in event['effects']:
 
         if effect['type'] == 'transient-state':
