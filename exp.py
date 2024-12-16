@@ -810,15 +810,22 @@ def runTrial(cfg):
                 cfg['run']['trialstate']['transient']['step'] = 1
                 cfg['run']['trialstate']['transient']['reactiontime'] = time_s - cfg['run']['trialstate']['transient']['gotime']
 
+
+
+        # cfg['run']['trialstate']['transient']['TargetHoldStartTime']     =  0
+        # cfg['run']['trialstate']['transient']['TargetHoldLocation']     =  [0,0] 
         if cfg['run']['trialstate']['transient']['step'] == 1:
             # IF criterion is DISTANCE:
             if trialdict['reachcompletioncriterion']['type'] == 'homecursordistance':
                 if home_cursor_distance > (trialdict['reachcompletioncriterion']['hometargetdistance_prop'] * home_target_distance):
                     cfg['run']['trialstate']['transient']['step'] = 2
+                    cfg['run']['trialstate']['transient']['TargetHoldStartTime'] = copy.deepcopy(time_s)
+                    cfg['run']['trialstate']['transient']['TargetHoldLocation'] = cursorPos
             # IF criterion is ACQUIRE:
             if trialdict['reachcompletioncriterion']['type'] == 'acquire':
                 if target_cursor_distance < (trialdict['reachcompletioncriterion']['targetradius_prop'] * target_radius):
                     cfg['run']['trialstate']['transient']['step'] = 2
+                    cfg['run']['trialstate']['transient']['TargetHoldStartTime'] = copy.deepcopy(time_s)
             
             # update times in transient trial state upon reach completion:
             if cfg['run']['trialstate']['transient']['step'] == 2:
@@ -828,18 +835,36 @@ def runTrial(cfg):
 
 
         if cfg['run']['trialstate']['transient']['step'] == 2:
+            
+            if trialdict['reachcompletioncriterion']['type'] == 'acquire':
+                if target_cursor_distance > (trialdict['reachcompletioncriterion']['targetradius_prop'] * target_radius):
+                    cfg['run']['trialstate']['transient']['step'] = 1 # going back to previous state
+                elif time_s >= (cfg['run']['trialstate']['transient']['TargetHoldStartTime'] + holddurations['target']):
+                    cfg['run']['trialstate']['transient']['step'] = 3
+
+            if trialdict['reachcompletioncriterion']['type'] == 'homecursordistance':
+                distmoved = getDistance(cfg['run']['trialstate']['transient']['TargetHoldLocation'], cursorPos)
+                if distmoved > (trialdict['reachcompletioncriterion']['hometargetdistance_prop'] * target_radius):
+                    cfg['run']['trialstate']['transient']['step'] = 1 # going back to previous state
+                elif time_s >= (cfg['run']['trialstate']['transient']['TargetHoldStartTime'] + holddurations['target']):
+                    cfg['run']['trialstate']['transient']['step'] = 3
+
+
+        if cfg['run']['trialstate']['transient']['step'] == 3:
+            # check if people have left the target:
             if (home_cursor_distance < (home_target_distance - target_radius)):
                 #print('entering step 4')
                 cfg['run']['trialstate']['transient']['step'] = 4
 
 
-        if cfg['run']['trialstate']['transient']['step'] == 3:
-            # this would be a HOLD at the target (skipping for now)
-            # the criteria should come from the trial-event sequence,
-            # and depend on the outward reach completion criterion (acquire target? home-cursor distance?)
-            # so not doing this right now... :(
-            pass
-
+        # if cfg['run']['trialstate']['transient']['step'] == -1:
+        #     if (home_cursor_distance > home_radius):
+        #         cfg['run']['trialstate']['transient']['step'] = -2
+        #     elif time_s >= (cfg['run']['trialstate']['transient']['StartHoldStartTime'] + holddurations['start']):
+        #         # hold is completed, we move on to step 0, and that is "go time"
+        #         cfg['run']['trialstate']['transient']['step'] = 0
+        
+        # going back to the home position:
         if cfg['run']['trialstate']['transient']['step'] == 4:
             # print('in step 4')
             if (home_cursor_distance < home_radius):
@@ -1264,7 +1289,7 @@ def loadScripts(cfg):
 
     script_files = glob.glob('experiments/%s/resources/scripts/*.py'%(cfg['run']['experiment']), recursive=False)
 
-    print(script_files)
+    # print(script_files)
 
     if len(script_files):
 
@@ -1340,7 +1365,8 @@ def resetTransientTrialState(cfg):
     # cfg['run']['trialstate']['transient']['StartHoldFinished']       =  0
     cfg['run']['trialstate']['transient']['FinishHoldStartTime']     =  0
     # cfg['run']['trialstate']['transient']['FinishHoldFinished']      =  0
-    cfg['run']['trialstate']['transient']['targetHoldStartTime']     =  0
+    cfg['run']['trialstate']['transient']['TargetHoldStartTime']     =  0
+    cfg['run']['trialstate']['transient']['TargetHoldLocation']     =  [0,0] # for distance criterion trials
     # cfg['run']['trialstate']['transient']['targetHoldFinished']      =  0
     cfg['run']['trialstate']['transient']['step']                    = -3
 
@@ -1401,13 +1427,13 @@ def checkTimeTrigger(trigger):
 
 def implementEventEffect(event, cfg, trialdict):
 
-    print(event)
+    # print(event)
     if not(isinstance(event['effects'],list)):
         event['effects'] = [event['effects']]
 
     for effect in event['effects']:
-        print(effect)
-        print(effect['type'])
+        # print(effect)
+        # print(effect['type'])
         if effect['type'] == 'transient-state':
             if effect['delay'] == 0:
                 # we implement the effect right away
@@ -1509,12 +1535,12 @@ def checkFeedbackRules(cfg, trialdict, trialdata, distances, positions):
                 if value == 'cursor':
                     cfg['run']['trialstate']['transient']['imprintCursorPos'] = positions['cursor_pos']
                     new_events += [ {'trigger' : {'type'      : 'time',
-                                                'value'     :  onset},
+                                                  'value'     :  onset},
                                     'effects' : [{ 'type'       : 'transient-state',
                                                 'delay'      : 0,
                                                 'parameters' : {'showImprintCursor' : True}}]},
                                     {'trigger' : {'type'      : 'time',
-                                                'value'     :  offset},
+                                                  'value'     :  offset},
                                     'effects' : [{ 'type'       : 'transient-state',
                                                 'delay'      : 0,
                                                 'parameters' : {'showImprintCursor' : False}}]} ]             
