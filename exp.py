@@ -474,10 +474,13 @@ def runTrialSequence(cfg):
     performance['scoredpoints']       = []
     performance['cursorerrorgain']    = []
     performance['trialstarttime_s']   = []
-    performance['W_hat']              = []
+    # performance['W_hat']              = []
     performance['event_idx']          = []
 
-    cfg['run']['new_W_hat'] = 0
+
+    for key in cfg['settings']['customvariables'].keys():
+        performance[key] = []
+    # cfg['run']['new_W_hat'] = 0
 
     cfg['run']['performance'] = performance
 
@@ -670,6 +673,8 @@ def runTrial(cfg):
         holddurations = { 'start'  : 0.000,
                           'target' : 0.000,
                           'finish' : 0.000 }
+    
+    trialdict['holddurations'] = holddurations
 
 
     # we need the radius of things:
@@ -1208,7 +1213,12 @@ def storePerformance(cfg, trialdata):
 
     cfg['run']['performance']['scoredpoints'].append(trialdata['scoredpoints'])
 
-    cfg['run']['performance']['W_hat'].append(copy.deepcopy(cfg['run']['new_W_hat']))
+    # cfg['run']['performance']['W_hat'].append(copy.deepcopy(cfg['run']['new_W_hat']))
+
+    for key in cfg['settings']['customvariables'].keys():
+        print(key)
+        print(cfg['settings']['customvariables'][key])
+        cfg['run']['performance'][key].append(eval(cfg['settings']['customvariables'][key]))
 
     return(cfg)
 
