@@ -96,6 +96,16 @@ pip3 install screeninfo==0.8.1 scipy==1.3.3
 
 For some advanced options, we use `scipy.optimize`.
 
+## LibTiff5-dev
+
+Wx (and psychopy, probably) need LibTiff to do stuff with images and the versions we use here, require libtiff5. Newer versions of Debian/Ubuntu/Mint install libtiff6 instead. So here we install libtiff5 from older repositories:
+
+```
+cd Desktop/
+wget http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5_4.3.0-6ubuntu0.10_amd64.deb http://mirrors.kernel.org/ubuntu/pool/main/t/tiff/libtiffxx5_4.3.0-6ubuntu0.10_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5-dev_4.3.0-6ubuntu0.10_amd64.deb
+sudo apt install ./libtiff5_4.3.0-6ubuntu0.10_amd64.deb ./libtiffxx5_4.3.0-6ubuntu0.10_amd64.deb ./libtiff5-dev_4.3.0-6ubuntu0.10_amd64.deb
+```
+
 # Installing PyVMEC2
 
 Once the required environment and dependencies are set up, you should create a folder for everything to live in, for example: `VisuomotorAdaptation`. Then within this folder, you should _clone_ this repository:
