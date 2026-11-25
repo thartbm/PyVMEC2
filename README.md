@@ -102,8 +102,8 @@ Wx (and psychopy, probably) need LibTiff to do stuff with images and the version
 
 ```
 cd Desktop/
-wget http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5_4.3.0-6ubuntu0.10_amd64.deb http://mirrors.kernel.org/ubuntu/pool/main/t/tiff/libtiffxx5_4.3.0-6ubuntu0.10_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5-dev_4.3.0-6ubuntu0.10_amd64.deb
-sudo apt install ./libtiff5_4.3.0-6ubuntu0.10_amd64.deb ./libtiffxx5_4.3.0-6ubuntu0.10_amd64.deb ./libtiff5-dev_4.3.0-6ubuntu0.10_amd64.deb
+wget http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5_4.3.0-6ubuntu0.13_amd64.deb http://mirrors.kernel.org/ubuntu/pool/main/t/tiff/libtiffxx5_4.3.0-6ubuntu0.13_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5-dev_4.3.0-6ubuntu0.13_amd64.deb
+sudo apt install ./libtiff5_4.3.0-6ubuntu0.13_amd64.deb ./libtiffxx5_4.3.0-6ubuntu0.13_amd64.deb ./libtiff5-dev_4.3.0-6ubuntu0.13_amd64.deb
 ```
 
 # Installing PyVMEC2
