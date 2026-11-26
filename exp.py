@@ -1198,10 +1198,19 @@ def storePerformance(cfg, trialdata):
     distance = np.sqrt(XY[:,0]**2 + XY[:,1]**2)
     distcrit = 0.25 * math.sqrt((target[0] - home[0])**2 + (target[1] - home[1])**2)
     q_idx = np.where(distance >= distcrit)[0][0]
-    #print(threshold_idx)
-    xd, yd = XY[q_idx,0], XY[q_idx,1]
+    q_idx2 = q_idx
+    q_idx1 = q_idx - 1
+    
     unrot = -1 * ((trialdata['target']/180)*np.pi)
-    reachdev = (math.atan2((xd * math.sin(unrot)) + (yd * math.cos(unrot)), (xd * math.cos(unrot)) - (yd * math.sin(unrot)))/np.pi)*180
+    xd1, yd1 = XY[q_idx1,0], XY[q_idx1,1]
+    reachdev1 = (math.atan2((xd1 * math.sin(unrot)) + (yd1 * math.cos(unrot)), (xd1 * math.cos(unrot)) - (yd1 * math.sin(unrot)))/np.pi)*180
+    xd2, yd2 = XY[q_idx2,0], XY[q_idx2,1]
+    reachdev2 = (math.atan2((xd2 * math.sin(unrot)) + (yd2 * math.cos(unrot)), (xd2 * math.cos(unrot)) - (yd2 * math.sin(unrot)))/np.pi)*180
+
+    d1, d2 = abs(distance[q_idx1] - distcrit), abs(distance[q_idx2] - distcrit)
+    w1, w2 = d2/(d1+d2), d1/(d1+d2)
+    reachdev = (w1*reachdev1) + (w2*reachdev2)
+
     cfg['run']['performance']['reachdeviation_deg'].append(reachdev)
 
     start_s = min(arr[:,3])
